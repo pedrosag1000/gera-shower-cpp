@@ -42,7 +42,7 @@ void draw_arch(Mat frame, Point center, int circle_radius, int view_angle, int s
     line(
         frame,
         center,
-        Point(center.x + diff_x, center.y + diff_y),
+        Point(center.x + diff_x, center.y + diff_y),    
         color, thickness);
     diff_x = int(cos((view_angle + half_of_size_of_angle) / 180.0 * PI) * circle_radius);
     diff_y = int(sin((view_angle + half_of_size_of_angle) / 180.0 * PI) * circle_radius);
@@ -109,7 +109,8 @@ int main()
 
     int radar_angle = -100, radar_size_of_angle = 20;
     int view_angle = -100, view_size_of_angle = 20;
-    int horizental_angle = 60, vertical_angle = 60, zoom = 1;
+    int horizental_angle = 60, vertical_angle = 60;
+    double zoom = 1;
 
     cap.set(CAP_PROP_FOURCC, VideoWriter::fourcc('M', 'J', 'P', 'G'));
 
@@ -130,11 +131,28 @@ int main()
         int width = frame.cols;
         int height = frame.rows;
 
+        
+        // zoom the image
+        
+
+        //
+        double realZoom= sqrt(zoom);
+
+        Mat resized;
+        resize(frame,resized,Size(width*realZoom,height*realZoom),INTER_LINEAR);
+
+        frame=resized(Rect(resized.size().width/2 - width/2,resized.size().height/2 - height/2,width,height));
+
+
+
+
         int half_width = int(width / 2);
         int half_height = int(height / 2);
 
         int quarter_width = int(width / 4);
         int quarter_height = int(height / 4);
+
+
 
         // Draw center lines
         line(frame, Point(half_width, 0), Point(half_width, height), Scalar(0, 255, 0), 3);
@@ -226,7 +244,13 @@ int main()
         draw_text_center(frame, to_string(-vertical_angle / 2), Point(half_width, height - line_height), FONT_HERSHEY_SIMPLEX, .7, Scalar(0, 0, 255), 2);
 
         // show zoom
-        draw_text_center(frame, to_string(zoom) + "X", Point(line_width, line_height), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 0, 255), 2);
+        draw_text_center(frame, to_string((int)zoom)+"."+to_string((int)((zoom-(int)zoom)/.1)%10) + "X", Point(line_width, line_height), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 0, 255), 2);
+
+
+
+        
+        
+    
 
         imshow("Display window", frame);
 
@@ -263,7 +287,7 @@ int main()
                     view_angle = stoi(output.at(1));
                     vertical_angle = stoi(output.at(2));
                     horizental_angle = stoi(output.at(3));
-                    zoom = stoi(output.at(4));
+                    zoom = stod(output.at(4));
                 }
                 else
                 {
