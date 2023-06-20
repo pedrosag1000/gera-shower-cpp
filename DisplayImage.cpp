@@ -24,7 +24,7 @@ void draw_text_center(Mat frame, string text, Point center, int fontFace, double
     putText(frame, text, textOrg, fontFace, fontScale, color, thickness);
 }
 
-void draw_arch(Mat frame, Point center, int circle_radius, int view_angle, int size_of_angle, Scalar color, int thickness, bool drawAngle = false,double fontSize=0.5,bool overrideAngleText=false,int overrideAngle=0)
+void draw_arch(Mat frame, Point center, int circle_radius, int view_angle, int size_of_angle, Scalar color, int thickness, bool drawAngle = false, double fontSize = 0.5, bool overrideAngleText = false, int overrideAngle = 0)
 {
 
     int half_of_size_of_angle = size_of_angle / 2;
@@ -42,7 +42,7 @@ void draw_arch(Mat frame, Point center, int circle_radius, int view_angle, int s
     line(
         frame,
         center,
-        Point(center.x + diff_x, center.y + diff_y),    
+        Point(center.x + diff_x, center.y + diff_y),
         color, thickness);
     diff_x = int(cos((view_angle + half_of_size_of_angle) / 180.0 * PI) * circle_radius);
     diff_y = int(sin((view_angle + half_of_size_of_angle) / 180.0 * PI) * circle_radius);
@@ -61,6 +61,12 @@ void draw_arch(Mat frame, Point center, int circle_radius, int view_angle, int s
     }
 }
 
+int findCharInString(const string &s,const char &c){
+	for(int i=0;i<s.length();i++)
+		if(s[i]==c)
+			return i;
+	return -1;
+}
 vector<string> explode(const string &s, const char &c)
 {
     string buff{""};
@@ -82,28 +88,41 @@ vector<string> explode(const string &s, const char &c)
     return v;
 }
 
-int main()
+int main(int argc, char *argv[])
 {
+    if (argc != 4)
+    {
+        
+        cout << "You sould insert 4 args" << endl
+             << "1) Webcam address (like 0 or 1, or dev/video1 or rstp://192.168.1.1 or etc)" << endl
+             << "2) Serial port address (like: /dev/ttyTHS1 or /dev/ttyS0 or etc)" << endl
+             << "3) Video display width in pixel - this number should be less than webcam width (like 1920 or 1080 or 756 or etc)" << endl
+             << endl
+             << "For example:" << endl
+             << "./DisplayImage /dev/video1 /dev/ttyTHS2 1920 1080" << endl;
+        ;
+        return 1;
+    }
+
+    int display_width = stoi(argv[3]);
 
     Mat frame;
     int frame_id = 0;
 
-    namedWindow("Display window");
-
-    VideoCapture cap("/dev/video1");
-
     // Create serial port object and open serial port at 57600 buad, 8 data bits, no parity bit, one stop bit (8n1),
     // and no flow control
-    SerialPort serialPort("/dev/ttyTHS2", BaudRate::B_115200, NumDataBits::EIGHT, Parity::NONE, NumStopBits::ONE);
+    SerialPort serialPort(argv[2], BaudRate::B_115200, NumDataBits::EIGHT, Parity::NONE, NumStopBits::ONE);
     // Use SerialPort serialPort("/dev/ttyACM0", 13000); instead if you want to provide a custom baud rate
     serialPort.SetTimeout(1); // Block for up to 0ms to receive data
     serialPort.Open();
+    cout << "Serial port is opened" << endl;
 
     // WARNING: If using the Arduino Uno or similar, you may want to delay here, as opening the serial port causes
     // the micro to reset!
 
     // Read some data back (will block for up to 100ms due to the SetTimeout(100) call above)
-    string readData, allReadData, startString = "Start:", endString = ":End";
+    string readData, allReadData;
+    char  startChar = char(255), endChar = char(254);
     bool isDataStarted = false;
     int startPosition = -1, endPosition = -1;
 
@@ -112,59 +131,71 @@ int main()
     int horizental_angle = 60, vertical_angle = 60;
     double zoom = 1;
 
-    cap.set(CAP_PROP_FOURCC, VideoWriter::fourcc('M', 'J', 'P', 'G'));
-
-    cap.set(CAP_PROP_FRAME_WIDTH, 1080);
-    cap.set(CAP_PROP_FRAME_HEIGHT, 1080);
-
+    namedWindow(" ");
+    cout<<"Video address: " << argv[1]<<endl; 
+    VideoCapture cap(argv[1],CAP_GSTREAMER);
+    cout << "Camera connection is oppened" << endl;
+    
     if (!cap.isOpened())
     {
-        cout << "cannot open camera";
+        cout << "Error: cannot open camera" << endl;
+        return 0;
     }
 
     int pressed_key = 10;
+
+
     while (pressed_key != 27)
     {
-        frame_id = frame_id + 1 % 1000;
+        frame_id = (frame_id + 1) % 360;
         cap >> frame;
-
         int width = frame.cols;
         int height = frame.rows;
 
+
+	if(width>display_width){
+		double ratio=(double)display_width / width;
+		Mat newFrame;
+        	resize(frame, newFrame, Size((int)(width*ratio), (int)(height*ratio)), INTER_LINEAR);
+	        frame = newFrame;
+		width=(int)(width*ratio);
+		height=(int)(height*ratio);
+
+	}
         
+
         // zoom the image
-        
+        double realZoom = sqrt(zoom);
 
-        //
-        double realZoom= sqrt(zoom);
+        Mat resized = frame(Rect(
+            (width / (2 * realZoom)) * (realZoom - 1),
+            (height / (2 * realZoom)) * (realZoom - 1),
+            width - ((width / realZoom) * (realZoom - 1)),
+            height - ((height / realZoom) * (realZoom - 1))));
 
-        Mat resized;
-        resize(frame,resized,Size(width*realZoom,height*realZoom),INTER_LINEAR);
+        Mat newFrame;
+        resize(resized, newFrame, Size(width, height), INTER_LINEAR);
+        frame = newFrame;
 
-        frame=resized(Rect(resized.size().width/2 - width/2,resized.size().height/2 - height/2,width,height));
+        float half_width = width / 2.0;
+        float half_height = height / 2.0;
 
-
-
-
-        int half_width = int(width / 2);
-        int half_height = int(height / 2);
-
-        int quarter_width = int(width / 4);
-        int quarter_height = int(height / 4);
-
-
+        float quarter_width = width / 4.0;
+        float quarter_height = height / 4.0;
 
         // Draw center lines
-        line(frame, Point(half_width, 0), Point(half_width, height), Scalar(0, 255, 0), 3);
-        line(frame, Point(0, half_height), Point(width, half_height), Scalar(0, 255, 0), 3);
+        line(frame, Point(half_width, 0), Point(half_width, height), Scalar(0, 255, 0), 1);
+        line(frame, Point(0, half_height), Point(width, half_height), Scalar(0, 255, 0), 1);
+
+    
 
         // draw lines on center lines
-        int one_height = int(height / 100);
-        int one_width = int(width / 100);
+        float one_height = height / 100.0;
+        float one_width = width / 100.0;
 
         int grid_counts = 20;
-        int line_width = width / grid_counts;
-        int line_height = height / grid_counts;
+        float line_width = width / (float)grid_counts;
+        float line_height = height / (float)grid_counts;
 
         for (int i = 1; i <= grid_counts; i++)
         {
@@ -183,7 +214,7 @@ int main()
         }
 
         // Draw radar circle on right top
-        int circle_radius = int(quarter_height / 2);
+        int circle_radius = int(quarter_height / 3);
         Point circle_center = Point(int(width - circle_radius) - 10, circle_radius + 10);
 
         circle(frame, circle_center, circle_radius,
@@ -197,7 +228,7 @@ int main()
             (radar_angle < 0 ? (180 + frame_id) : radar_angle) - 90,
             radar_size_of_angle,
             Scalar(0, 0, 255),
-            2,true,0.4,true,radar_angle);
+            2, true, 0.4, true, radar_angle);
 
         // putText(frame,
         //         to_string(radar_angle < 0 ? 180 + frame_id : radar_angle),
@@ -205,20 +236,20 @@ int main()
         //         circle_center, FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 0, 255), 2);
 
         // Draw view sight
-        circle_radius = int(quarter_height);
+        circle_radius = int(quarter_height / 2);
         circle_center = Point(int(width - circle_radius) - 10, height - circle_radius * .5);
 
         draw_arch(
             frame,
             circle_center,
             circle_radius,
-            (270 + 370) / 2,
-            (370 - 270) + view_size_of_angle,
+            (280 + 370) / 2,
+            (370 - 280) + view_size_of_angle,
             Scalar(0, 255, 0),
             1);
 
         int view_angle_temp = view_angle < -90 ? (frame_id / 10 % 100) - 10 : view_angle;
-        view_angle_temp = ((view_angle_temp + 10) % 100) - 10;
+        view_angle_temp = ((view_angle_temp + 10) % 90) - 10;
 
         draw_arch(
             frame,
@@ -227,7 +258,7 @@ int main()
             10 - (view_angle_temp + 10),
             view_size_of_angle,
             Scalar(0, 0, 255),
-            2,true,.7,true,view_angle_temp);
+            2, true, .7, true, view_angle_temp);
 
         // putText(frame,
         //         to_string(view_angle_temp),
@@ -244,17 +275,15 @@ int main()
         draw_text_center(frame, to_string(-vertical_angle / 2), Point(half_width, height - line_height), FONT_HERSHEY_SIMPLEX, .7, Scalar(0, 0, 255), 2);
 
         // show zoom
-        draw_text_center(frame, to_string((int)zoom)+"."+to_string((int)((zoom-(int)zoom)/.1)%10) + "X", Point(line_width, line_height), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 0, 255), 2);
+        draw_text_center(frame, to_string((int)zoom) + "." + to_string((int)((zoom - (int)zoom) / .1) % 10) + "X", Point(line_width, line_height), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 0, 255), 2);
 
+        // resize output image
 
+        Mat outputFrame;
+        resize(frame, outputFrame, Size(display_width, (int)((1.0*display_width / width) * height)), INTER_LINEAR);
+        imshow(" ", outputFrame);
 
-        
-        
-    
-
-        imshow("Display window", frame);
-
-        pressed_key = waitKey(25);
+        pressed_key = waitKey(1);
         readData.clear();
         serialPort.Read(readData);
 
@@ -262,36 +291,48 @@ int main()
 
         if (!isDataStarted)
         {
-            startPosition = allReadData.rfind(startString);
+            startPosition = allReadData.find(startChar);
             if (startPosition >= 0)
             {
-                allReadData = allReadData.substr(startPosition + startString.length(), allReadData.length());
+                allReadData = allReadData.substr(startPosition + 1, allReadData.length());
                 isDataStarted = true;
                 startPosition = -1;
             }
         }
         else
         {
-            endPosition = allReadData.rfind(endString);
+            endPosition = allReadData.find(endChar);
+		
             if (endPosition >= 0)
             {
                 allReadData = allReadData.substr(0, endPosition);
 
                 // process data in allReadData
-                vector<string> output = explode(allReadData, ',');
+ 
 
-                if (output.size() == 5)
-                {
-                    cout << "Processed data: " << allReadData << endl;
-                    radar_angle = stoi(output.at(0));
-                    view_angle = stoi(output.at(1));
-                    vertical_angle = stoi(output.at(2));
-                    horizental_angle = stoi(output.at(3));
-                    zoom = stod(output.at(4));
+	
+		//radar 2 byte
+		//view angle 1 byte
+		//vertical angle 1 byte
+		//horizental angle 1 byte
+		//zoom 1 byte
+		if(allReadData.length() == 6){
+			
+		 
+    		    radar_angle=allReadData[0]*256 + allReadData[1];
+			
+                 //   cout << "Processed data: " << allReadData << endl;
+			
+                    view_angle = (int)allReadData[2]-100;
+                    vertical_angle = (int)allReadData[3];
+                    horizental_angle = (int)allReadData[4];
+                    zoom = (int)allReadData[5] / 10;
+                    if(zoom < 1)
+                       zoom=1;
                 }
                 else
                 {
-                    cout << "Data size is correct" << endl;
+                    cout << "Data size is not correct" << endl;
                 }
 
                 isDataStarted = false;
@@ -299,11 +340,17 @@ int main()
                 // flush
                 allReadData.clear();
             }
+	    else{
+		cout<< "waiting for data to be finished" <<endl;
+	    }
         }
 
         if (!readData.empty())
         {
-            cout << "Recieved data = \"" << readData << "\"" << endl;
+//	    for(int i=0; i< readData.length();i++){
+//		cout<< readData[i] << " | "<<(int)readData[i]<<endl;
+//	    }
+ //           cout << "Recieved data = \"" << readData << "\"" << endl;
         }
     }
 
