@@ -2,6 +2,7 @@
 #include <math.h>
 #include <CppLinuxSerial/SerialPort.hpp>
 #include <string.h>
+#include <ctime>
 
 using namespace cv;
 
@@ -90,14 +91,14 @@ vector<string> explode(const string &s, const char &c)
 
 int main(int argc, char *argv[])
 {
-    if (argc != 4)
+    if (argc != 5)
     {
         
         cout << "You sould insert 4 args" << endl
              << "1) Webcam address (like 0 or 1, or dev/video1 or rstp://192.168.1.1 or etc)" << endl
              << "2) Serial port address (like: /dev/ttyTHS1 or /dev/ttyS0 or etc)" << endl
              << "3) Video display width in pixel - this number should be less than webcam width (like 1920 or 1080 or 756 or etc)" << endl
-             << endl
+	     << "4) Video output file (GStreamer) " << endl
              << "For example:" << endl
              << "./DisplayImage /dev/video1 /dev/ttyTHS2 1920 1080" << endl;
         ;
@@ -142,28 +143,43 @@ int main(int argc, char *argv[])
         return 0;
     }
 
+    
+
+
     int pressed_key = 10;
 
+    cap >> frame;
+    int width = frame.cols;
+    int height = frame.rows;
+
+
+    if(width>display_width){
+	double ratio=(double)display_width / width;
+	Mat newFrame;
+        resize(frame, newFrame, Size((int)(width*ratio), (int)(height*ratio)), INTER_LINEAR);
+	frame = newFrame;
+	width=(int)(width*ratio);
+	height=(int)(height*ratio);
+    }
+    time_t now;
+    tm* currentTime;
+    char dateTimeChar[100];
+    cout<<"Video writer started with : "<<width<<"x"<<height<<endl;
+
+    VideoWriter video;
+    video.open(argv[4],CAP_GSTREAMER,0,(double)10,Size(width,height));
 
     while (pressed_key != 27)
     {
+	long long tickCount=getTickCount();
+	time(&now);
+	currentTime=localtime(&now);
+        strftime(dateTimeChar,50,"%Y/%m/%d %H:%M:%S",currentTime);
+
+	
         frame_id = (frame_id + 1) % 360;
         cap >> frame;
-        int width = frame.cols;
-        int height = frame.rows;
-
-
-	if(width>display_width){
-		double ratio=(double)display_width / width;
-		Mat newFrame;
-        	resize(frame, newFrame, Size((int)(width*ratio), (int)(height*ratio)), INTER_LINEAR);
-	        frame = newFrame;
-		width=(int)(width*ratio);
-		height=(int)(height*ratio);
-
-	}
-        
-
+    
         // zoom the image
         double realZoom = sqrt(zoom);
 
@@ -277,11 +293,14 @@ int main(int argc, char *argv[])
         // show zoom
         draw_text_center(frame, to_string((int)zoom) + "." + to_string((int)((zoom - (int)zoom) / .1) % 10) + "X", Point(line_width, line_height), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 0, 255), 2);
 
-        // resize output image
+	draw_text_center(frame, string(dateTimeChar) , Point(4*line_width,line_height), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0, 0, 255), 1);
+	
+        	
+	
+	video.write(frame);
 
-        Mat outputFrame;
-        resize(frame, outputFrame, Size(display_width, (int)((1.0*display_width / width) * height)), INTER_LINEAR);
-        imshow(" ", outputFrame);
+        imshow(" ", frame);
+
 
         pressed_key = waitKey(1);
         readData.clear();
@@ -352,9 +371,15 @@ int main(int argc, char *argv[])
 //	    }
  //           cout << "Recieved data = \"" << readData << "\"" << endl;
         }
+
+	if(frame_id % 30 ==0){
+		cout<<"FPS "<<getTickFrequency() / (getTickCount() - tickCount)<<endl;
+	}
     }
 
     // Close the serial port
     serialPort.Close();
+    cap.release();
+    video.release();
     return 0;
 }
