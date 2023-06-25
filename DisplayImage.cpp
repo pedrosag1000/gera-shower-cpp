@@ -3,6 +3,7 @@
 #include <CppLinuxSerial/SerialPort.hpp>
 #include <string.h>
 #include <ctime>
+#include <thread>
 
 using namespace cv;
 
@@ -89,6 +90,28 @@ vector<string> explode(const string &s, const char &c)
     return v;
 }
 
+
+VideoWriter video;
+int frame_id = 0,painted_frame_id=0;
+Mat frame,painted_frame;
+int pressed_key = 10;
+
+void captureFrame(){
+
+     int lastFrameId=0;
+     while(pressed_key != 27){
+     	if(lastFrameId!=painted_frame_id){
+		video.write(frame);
+	        lastFrameId=painted_frame_id;
+	}
+	else{
+		this_thread::sleep_for(chrono::milliseconds(25));
+	}
+     }
+
+}
+
+
 int main(int argc, char *argv[])
 {
     if (argc != 5)
@@ -107,8 +130,8 @@ int main(int argc, char *argv[])
 
     int display_width = stoi(argv[3]);
 
-    Mat frame;
-    int frame_id = 0;
+
+    
 
     // Create serial port object and open serial port at 57600 buad, 8 data bits, no parity bit, one stop bit (8n1),
     // and no flow control
@@ -146,7 +169,7 @@ int main(int argc, char *argv[])
     
 
 
-    int pressed_key = 10;
+
 
     cap >> frame;
     int width = frame.cols;
@@ -166,8 +189,12 @@ int main(int argc, char *argv[])
     char dateTimeChar[100];
     cout<<"Video writer started with : "<<width<<"x"<<height<<endl;
 
-    VideoWriter video;
+    
     video.open(argv[4],CAP_GSTREAMER,0,(double)10,Size(width,height));
+    
+
+    thread videoThread(captureFrame);
+    
 
     while (pressed_key != 27)
     {
@@ -294,11 +321,9 @@ int main(int argc, char *argv[])
         draw_text_center(frame, to_string((int)zoom) + "." + to_string((int)((zoom - (int)zoom) / .1) % 10) + "X", Point(line_width, line_height), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 0, 255), 2);
 
 	draw_text_center(frame, string(dateTimeChar) , Point(4*line_width,line_height), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0, 0, 255), 1);
-	
-        	
-	
-	video.write(frame);
 
+	painted_frame=frame;
+        painted_frame_id=frame_id;
         imshow(" ", frame);
 
 
@@ -376,7 +401,8 @@ int main(int argc, char *argv[])
 		cout<<"FPS "<<getTickFrequency() / (getTickCount() - tickCount)<<endl;
 	}
     }
-
+	
+    videoThread.join();
     // Close the serial port
     serialPort.Close();
     cap.release();
