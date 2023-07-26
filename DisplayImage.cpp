@@ -101,7 +101,7 @@ void captureFrame(){
      int lastFrameId=0;
      while(pressed_key != 27){
      	if(lastFrameId!=painted_frame_id){
-		video.write(frame);
+		video.write(painted_frame);
 	        lastFrameId=painted_frame_id;
 	}
 	else{
@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
     int horizental_angle = 60, vertical_angle = 60;
     double zoom = 1;
 
-    namedWindow(" ");
+    namedWindow(" ",1);
     cout<<"Video address: " << argv[1]<<endl; 
     VideoCapture cap(argv[1],CAP_GSTREAMER);
     cout << "Camera connection is oppened" << endl;
@@ -190,7 +190,7 @@ int main(int argc, char *argv[])
     cout<<"Video writer started with : "<<width<<"x"<<height<<endl;
 
     
-    video.open(argv[4],CAP_GSTREAMER,0,(double)10,Size(width,height));
+    video.open(argv[4],CAP_GSTREAMER,0,(double)30,Size(width,height));
     
 
     thread videoThread(captureFrame);
