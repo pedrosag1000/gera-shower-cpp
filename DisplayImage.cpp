@@ -155,8 +155,10 @@ int main(int argc, char *argv[])
     int horizental_angle = 60, vertical_angle = 60;
     double zoom = 1;
 
-    namedWindow(" ",1);
-    cout<<"Video address: " << argv[1]<<endl; 
+    namedWindow(" ",WINDOW_FULLSCREEN);
+    setWindowProperty(" ",WND_PROP_FULLSCREEN,WINDOW_FULLSCREEN);
+
+    cout<<"Video address: " << argv[1]<<endl;
     VideoCapture cap(argv[1],CAP_GSTREAMER);
     cout << "Camera connection is oppened" << endl;
     
