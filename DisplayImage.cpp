@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
     int horizental_angle = 60, vertical_angle = 60;
     double zoom = 1;
 
-    namedWindow(" ",WINDOW_FULLSCREEN);
+    namedWindow(" ",WINDOW_NORMAL);
     setWindowProperty(" ",WND_PROP_FULLSCREEN,WINDOW_FULLSCREEN);
 
     cout<<"Video address: " << argv[1]<<endl;
