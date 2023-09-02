@@ -11,3 +11,5 @@ add_executable( DisplayImage DisplayImage.cpp )
 target_link_libraries( DisplayImage ${OpenCV_LIBS} )
 target_link_libraries( DisplayImage CppLinuxSerial::CppLinuxSerial)
 target_link_libraries( DisplayImage Threads::Threads)
+
+configure_file(images/software-splash.png splash.png COPYONLY)

@@ -2,6 +2,7 @@
 #include <math.h>
 #include <CppLinuxSerial/SerialPort.hpp>
 #include <string.h>
+#include <chrono>
 #include <ctime>
 #include <thread>
 
@@ -89,11 +90,25 @@ vector<string> explode(const string &s, const char &c) {
     return v;
 }
 
-
 VideoWriter video;
+VideoCapture cap;
+char *videoCaptureAddress;
 int frame_id = 0, painted_frame_id = 0;
-Mat frame, painted_frame;
+Mat frame, originalFrame,painted_frame,splashScreen;
 int pressed_key = 10;
+
+void openVideoCapture(bool force=false){
+
+    while(!cap.isOpened() || force) {
+        cout<<"Waiting for camera"<<endl;
+        imshow(" ",splashScreen);
+        cout.flush();
+        waitKey(1000);
+        cap.release();
+        cap=VideoCapture(videoCaptureAddress, CAP_GSTREAMER);
+        force=false;
+    }
+}
 
 void captureFrame() {
 
@@ -128,13 +143,14 @@ int main(int argc, char *argv[]) {
 
 
 
+    splashScreen=imread("splash.png");
 
     // Create serial port object and open serial port at 57600 buad, 8 data bits, no parity bit, one stop bit (8n1),
     // and no flow control
     SerialPort serialPort(argv[2], BaudRate::B_115200, NumDataBits::EIGHT, Parity::NONE, NumStopBits::ONE);
     // Use SerialPort serialPort("/dev/ttyACM0", 13000); instead if you want to provide a custom baud rate
     serialPort.SetTimeout(1); // Block for up to 0ms to receive data
-    serialPort.Open();
+//    serialPort.Open();
     cout << "Serial port is opened" << endl;
 
     // WARNING: If using the Arduino Uno or similar, you may want to delay here, as opening the serial port causes
@@ -149,34 +165,32 @@ int main(int argc, char *argv[]) {
     int radar_angle = -100, radar_size_of_angle = 20;
     int view_angle = -100, view_size_of_angle = 20;
     int horizental_angle = 60, vertical_angle = 60;
-    double zoom = 1;
+    double zoom = 1,ratio=1;
 
-    namedWindow(" ", WINDOW_OPENGL);
+    namedWindow(" ", WINDOW_NORMAL);
     setWindowProperty(" ", WND_PROP_FULLSCREEN, WINDOW_FULLSCREEN);
 
-    cout << "Video address: " << argv[1] << endl;
-    VideoCapture cap(argv[1], CAP_GSTREAMER);
+    videoCaptureAddress = argv[1];
+    cout << "Video address: " << videoCaptureAddress << endl;
+
     cout << "Camera connection is oppened" << endl;
 
-    if (!cap.isOpened()) {
-        cout << "Error: cannot open camera" << endl;
-        return 0;
-    }
+    cout<<"splash screen read"<<endl;
 
+    openVideoCapture();
 
-    cap >> frame;
-    int width = frame.cols;
-    int height = frame.rows;
-
+    cap >> originalFrame;
+    int sourceWidth = originalFrame.cols;
+    int sourceHeight = originalFrame.rows;
+    int width=sourceWidth,height=sourceHeight;
 
     if (width > display_width) {
-        double ratio = (double) display_width / width;
-        Mat newFrame;
-        resize(frame, newFrame, Size((int) (width * ratio), (int) (height * ratio)), INTER_LINEAR);
-        frame = newFrame;
-        width = (int) (width * ratio);
-        height = (int) (height * ratio);
+        ratio = (double) display_width / sourceWidth;
+
+        width = (int) (sourceWidth * ratio);
+        height = (int) (sourceHeight * ratio);
     }
+
     time_t now;
     tm *currentTime;
     char dateTimeChar[100];
@@ -190,6 +204,7 @@ int main(int argc, char *argv[]) {
 
 
     while (pressed_key != 27) {
+
         long long tickCount = getTickCount();
         time(&now);
         currentTime = localtime(&now);
@@ -197,20 +212,35 @@ int main(int argc, char *argv[]) {
 
 
         frame_id = (frame_id + 1) % 360;
-        cap >> frame;
+
+
+        do {
+            openVideoCapture(originalFrame.empty());
+            cap >> originalFrame;
+        } while (originalFrame.empty());
+
+
+        sourceWidth=originalFrame.cols;
+        sourceHeight=originalFrame.rows;
+
+        if (width > display_width) {
+            ratio = (double) display_width / sourceWidth;
+
+            width = (int) (sourceWidth * ratio);
+            height = (int) (sourceHeight * ratio);
+        }
+
 
         // zoom the image
         double realZoom = sqrt(zoom);
 
-        Mat resized = frame(Rect(
-                (width / (2 * realZoom)) * (realZoom - 1),
-                (height / (2 * realZoom)) * (realZoom - 1),
-                width - ((width / realZoom) * (realZoom - 1)),
-                height - ((height / realZoom) * (realZoom - 1))));
+        Mat resized = originalFrame(Rect(
+                (sourceWidth / (2 * realZoom)) * (realZoom - 1),
+                (sourceHeight / (2 * realZoom)) * (realZoom - 1),
+                sourceWidth - ((sourceWidth / realZoom) * (realZoom - 1)),
+                sourceHeight - ((sourceHeight / realZoom) * (realZoom - 1))));
 
-        Mat newFrame;
-        resize(resized, newFrame, Size(width, height), INTER_LINEAR);
-        frame = newFrame;
+        resize(resized, frame, Size(width, height), INTER_LINEAR);
 
         float half_width = width / 2.0;
         float half_height = height / 2.0;
@@ -326,7 +356,7 @@ int main(int argc, char *argv[]) {
 
         pressed_key = waitKey(1);
         readData.clear();
-        serialPort.Read(readData);
+        //serialPort.Read(readData);
 
         allReadData.append(readData);
 
