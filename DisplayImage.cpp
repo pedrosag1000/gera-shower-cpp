@@ -18,7 +18,7 @@ using namespace mn::CppLinuxSerial;
 
 void shutdown(){
     //TODO uncomment this for shuting down
-    //system("shutdown -h now");
+    system("shutdown -h now");
     //exit(1);
 }
 void
@@ -125,7 +125,10 @@ void setVideoCaptureAddressByIP(string ip){
     string second=":554/streaming/channels/101 latency=10 is-live=true drop-on-latency=1 tcp-timeout=1000 teardown-timeout=1000 timeout=1000 ! rtph264depay ! h264parse ! decodebin ! autovideoconvert ! video/x-raw,format=BGRx ! videoconvert ! video/x-raw,format=BGR ! appsink drop=true sync=false";
     auto tmp=first+ip+second;
     if(tmp!=videoCaptureAddress)
-        cap.release();
+    {
+	cap.release();
+	videoCaptureAddress=tmp;
+    }
 }
 
 void captureFrame() {
@@ -194,7 +197,7 @@ int main(int argc, char *argv[]) {
     SerialPort serialPort(argv[2], BaudRate::B_115200, NumDataBits::EIGHT, Parity::NONE, NumStopBits::ONE);
     // Use SerialPort serialPort("/dev/ttyACM0", 13000); instead if you want to provide a custom baud rate
     serialPort.SetTimeout(1); // Block for up to 0ms to receive data
-//    serialPort.Open();
+    serialPort.Open();
     cout << "Serial port is opened" << endl;
 
     // WARNING: If using the Arduino Uno or similar, you may want to delay here, as opening the serial port causes
@@ -413,14 +416,14 @@ int main(int argc, char *argv[]) {
 
         pressed_key = waitKey(1);
         readData.clear();
-        //serialPort.Read(readData);
+        serialPort.Read(readData);
 
         if(lastTouchReported!=touchId) {
-//            serialPort.Write("touched:");
-//            serialPort.Write(to_string(touchedPoint.x));
-//            serialPort.Write(",");
-//            serialPort.Write(to_string(touchedPoint.y));
-//            serialPort.Write("\n");
+            serialPort.Write("touched:");
+            serialPort.Write(to_string(touchedPoint.x));
+            serialPort.Write(",");
+            serialPort.Write(to_string(touchedPoint.y));
+            serialPort.Write("\n");
             lastTouchReported=touchId;
         }
 
