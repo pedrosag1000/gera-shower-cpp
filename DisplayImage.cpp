@@ -5,6 +5,7 @@
 #include <chrono>
 #include <ctime>
 #include <thread>
+#include<stdlib.h>
 
 using namespace cv;
 
@@ -14,6 +15,12 @@ using namespace mn::CppLinuxSerial;
 
 #define PI 3.14159265
 
+
+void shutdown(){
+    //TODO uncomment this for shuting down
+    //system("shutdown -h now");
+    //exit(1);
+}
 void
 draw_text_center(Mat frame, string text, Point center, int fontFace, double fontScale, Scalar color, int thickness) {
     int baseLine = 0;
@@ -92,10 +99,13 @@ vector<string> explode(const string &s, const char &c) {
 
 VideoWriter video;
 VideoCapture cap;
-char *videoCaptureAddress;
+string videoCaptureAddress;
 int frame_id = 0, painted_frame_id = 0;
 Mat frame, originalFrame,painted_frame,splashScreen;
 int pressed_key = 10;
+Point touchedPoint(0,0);
+int touchId=0;
+int lastTouchReported=0;
 
 void openVideoCapture(bool force=false){
 
@@ -108,6 +118,14 @@ void openVideoCapture(bool force=false){
         cap=VideoCapture(videoCaptureAddress, CAP_GSTREAMER);
         force=false;
     }
+}
+
+void setVideoCaptureAddressByIP(string ip){
+    string first="rtspsrc location=rtsp://admin:Admin1401@";
+    string second=":554/streaming/channels/101 latency=10 is-live=true drop-on-latency=1 tcp-timeout=1000 teardown-timeout=1000 timeout=1000 ! rtph264depay ! h264parse ! decodebin ! autovideoconvert ! video/x-raw,format=BGRx ! videoconvert ! video/x-raw,format=BGR ! appsink drop=true sync=false";
+    auto tmp=first+ip+second;
+    if(tmp!=videoCaptureAddress)
+        cap.release();
 }
 
 void captureFrame() {
@@ -123,13 +141,39 @@ void captureFrame() {
     }
 
 }
+void mouseCallback(int event, int x, int y, int flags, void* userdata)
+{
+    if  ( event == EVENT_LBUTTONDOWN )
+    {
+        setVideoCaptureAddressByIP("192.168.1.100");
+        touchedPoint=Point(x,y);
+        touchId++;
+        cout << "Left button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
+    }
+    else if  ( event == EVENT_RBUTTONDOWN )
+    {
+        cout << "Right button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
+    }
+    else if  ( event == EVENT_MBUTTONDOWN )
+    {
+        cout << "Middle button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
+    }
+    else if ( event == EVENT_MOUSEMOVE )
+    {
+        //    cout << "Mouse move over the window - position (" << x << ", " << y << ")" << endl;
+
+    }
+    //    cout << "Mouse move over the window - position (" << x << ", " << y << ")" << endl;
+
+}
+
 
 
 int main(int argc, char *argv[]) {
     if (argc != 5) {
 
-        cout << "You sould insert 4 args" << endl
-             << "1) Webcam address (like 0 or 1, or dev/video1 or rstp://192.168.1.1 or etc)" << endl
+        cout << "You should insert 4 args" << endl
+             << "1) Webcam IP (192.168.1.1 or etc)" << endl
              << "2) Serial port address (like: /dev/ttyTHS1 or /dev/ttyS0 or etc)" << endl
              << "3) Video display width in pixel - this number should be less than webcam width (like 1920 or 1080 or 756 or etc)"
              << endl
@@ -139,8 +183,8 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    int display_width = stoi(argv[3]);
 
+    int display_width = stoi(argv[3]);
 
 
     splashScreen=imread("splash.png");
@@ -168,9 +212,10 @@ int main(int argc, char *argv[]) {
     double zoom = 1,ratio=1;
 
     namedWindow(" ", WINDOW_NORMAL);
+    setMouseCallback(" ", mouseCallback, NULL);
     setWindowProperty(" ", WND_PROP_FULLSCREEN, WINDOW_FULLSCREEN);
 
-    videoCaptureAddress = argv[1];
+    setVideoCaptureAddressByIP(argv[1]);
     cout << "Video address: " << videoCaptureAddress << endl;
 
     cout << "Camera connection is oppened" << endl;
@@ -349,6 +394,18 @@ int main(int argc, char *argv[]) {
         draw_text_center(frame, string(dateTimeChar), Point(4 * line_width, line_height), FONT_HERSHEY_SIMPLEX, 0.5,
                          Scalar(0, 0, 255), 1);
 
+        bool red=false;
+
+        if(touchedPoint.x > 0 && touchedPoint.x < 2*line_width &&
+           touchedPoint.y > height-line_width && touchedPoint.y < height)
+        {
+            red=true;
+            shutdown();
+        }
+
+        draw_text_center(frame, "Power OFF",Point(line_width,height-line_height),FONT_HERSHEY_SIMPLEX,1,red?Scalar(0,0,255):Scalar(0,255,0),1);
+
+
         painted_frame = frame;
         painted_frame_id = frame_id;
         imshow(" ", frame);
@@ -357,6 +414,15 @@ int main(int argc, char *argv[]) {
         pressed_key = waitKey(1);
         readData.clear();
         //serialPort.Read(readData);
+
+        if(lastTouchReported!=touchId) {
+//            serialPort.Write("touched:");
+//            serialPort.Write(to_string(touchedPoint.x));
+//            serialPort.Write(",");
+//            serialPort.Write(to_string(touchedPoint.y));
+//            serialPort.Write("\n");
+            lastTouchReported=touchId;
+        }
 
         allReadData.append(readData);
 
@@ -382,7 +448,7 @@ int main(int argc, char *argv[]) {
                 //vertical angle 1 byte
                 //horizental angle 1 byte
                 //zoom 1 byte
-                if (allReadData.length() == 6) {
+                if (allReadData.length() == 10) {
 
 
                     radar_angle = allReadData[0] * 256 + allReadData[1];
@@ -393,6 +459,14 @@ int main(int argc, char *argv[]) {
                     vertical_angle = (int) allReadData[3];
                     horizental_angle = (int) allReadData[4];
                     zoom = (int) allReadData[5] / 10;
+
+
+                    setVideoCaptureAddressByIP(
+                            to_string(allReadData[6])+'.'+
+                            to_string(allReadData[7])+'.'+
+                            to_string(allReadData[8])+'.'+
+                            to_string(allReadData[9]));
+
                     if (zoom < 1)
                         zoom = 1;
                 } else {

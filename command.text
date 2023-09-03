@@ -1,11 +1,11 @@
 Jetson:
 
-sudo ./DisplayImage "rtspsrc location=rtsp://admin:Admin1401@192.168.1.64:554/streaming/channels/103 latency=10 is-live=true drop-on-latency=1 tcp-timeout=1000 teardown-timeout=1000 timeout=1000  ! rtph264depay ! h264parse ! decodebin ! autovideoconvert ! video/x-raw,format=BGRx ! videoconvert ! video/x-raw,format=BGR ! appsink drop=true sync=false" /dev/ttyTHS1 1920 "appsrc ! video/x-raw, format=BGR ! queue ! videoconvert ! video/x-raw,format=NV12 ! autovideoconvert ! x265enc ! h265parse ! qtmux ! filesink location=video1.mp4 sync=false"
+./DisplayImage "rtspsrc location=rtsp://admin:Admin1401@192.168.1.64:554/streaming/channels/103 latency=10 is-live=true drop-on-latency=1 tcp-timeout=1000 teardown-timeout=1000 timeout=1000  ! rtph264depay ! h264parse ! decodebin ! autovideoconvert ! video/x-raw,format=BGRx ! videoconvert ! video/x-raw,format=BGR ! appsink drop=true sync=false" /dev/ttyTHS1 1920 "appsrc ! video/x-raw, format=BGR ! queue ! videoconvert ! video/x-raw,format=NV12 ! autovideoconvert ! x265enc ! h265parse ! qtmux ! filesink location=video1.mp4 sync=false"
 
 
 Laptop:
 
-sudo ./DisplayImage "rtspsrc location=rtsp://admin:Admin1401@192.168.1.64:554/streaming/channels/103 latency=10 is-live=true drop-on-latency=1 tcp-timeout=1000 teardown-timeout=1000 timeout=1000 ! rtph264depay ! h264parse ! decodebin ! autovideoconvert ! video/x-raw,format=BGRx ! videoconvert ! video/x-raw,format=BGR ! appsink drop=true sync=false" /dev/ttyTHS1 1920 "appsrc ! video/x-raw, format=BGR ! queue ! videoconvert ! video/x-raw,format=NV12 ! autovideoconvert ! x265enc ! h265parse ! qtmux ! filesink location=video1.mp4 sync=false"
+./DisplayImage "rtspsrc location=rtsp://admin:Admin1401@192.168.1.64:554/streaming/channels/103 latency=10 is-live=true drop-on-latency=1 tcp-timeout=1000 teardown-timeout=1000 timeout=1000 ! rtph264depay ! h264parse ! decodebin ! autovideoconvert ! video/x-raw,format=BGRx ! videoconvert ! video/x-raw,format=BGR ! appsink drop=true sync=false" /dev/ttyTHS1 1920 "appsrc ! video/x-raw, format=BGR ! queue ! videoconvert ! video/x-raw,format=NV12 ! autovideoconvert ! x265enc ! h265parse ! qtmux ! filesink location=video1.mp4 sync=false"
 
 
 
