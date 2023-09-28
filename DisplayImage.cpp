@@ -568,20 +568,14 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        if (!readData.empty()) {
-//	    for(int i=0; i< readData.length();i++){
-//		cout<< readData[i] << " | "<<(int)readData[i]<<endl;
-//	    }
-            //           cout << "Recieved data = \"" << readData << "\"" << endl;
-        }
-
-        if (frame_id % 30 == 0) {
-            cout << " OPENCV FPS " << getTickFrequency() / (getTickCount() - tickCount) << endl;
-        }
+//        if (frame_id % 30 == 0) {
+//            cout << " OPENCV FPS " << getTickFrequency() / (getTickCount() - tickCount) << endl;
+//        }
 
 
         if(frameCount>=30) {
-            cout << " READ FPS: " << frameCount / ((nowTime - lastTime) / 1000.0) << " ";
+            cout << "frame id: "<<painted_frame_id<< " Read FPS: " << frameCount / ((nowTime - lastTime) / 1000.0) << " ";
+
             lastTime = nowTime;
             frameCount = 0;
         }
