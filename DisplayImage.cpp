@@ -221,7 +221,7 @@ int main(int argc, char *argv[]) {
 
     char startChar = char(255), secondStartChar = char(254);
     bool isDataStarted = false;
-    int startPosition = -1, endPosition = -1,serialLength=0;
+    int startPosition = -1,serialLength=0;
 
     int radar_angle = -100, radar_size_of_angle = 20;
     int view_angle = -100, view_size_of_angle = 20;
@@ -517,7 +517,6 @@ int main(int argc, char *argv[]) {
             if (allReadData.size() >= serialLength) {
 
                 cout<<"data chunk recieved"<<endl;
-                allReadData=allReadData.substr(serialLength,allReadData.size());
                 auto data = allReadData.substr(0, serialLength);
 
                 // process data in allReadData
@@ -529,8 +528,6 @@ int main(int argc, char *argv[]) {
                 //vertical angle 1 byte
                 //horizental angle 1 byte
                 //zoom 1 byte
-                if (allReadData.length() == serialLength) {
-
 
                     radar_angle = allReadData[0] * 256 + allReadData[1];
 
@@ -550,14 +547,11 @@ int main(int argc, char *argv[]) {
 
                     if (zoom < 1)
                         zoom = 1;
-                } else {
-                    cout << "Data size is not correct" << endl;
-                }
 
                 isDataStarted = false;
-                endPosition = -1;
+
                 // flush
-                allReadData.clear();
+                allReadData=allReadData.substr(serialLength,allReadData.size());
             } else {
                 cout << "waiting for data to be finished.. remaining byte: "<<serialLength-allReadData.size() << endl;
             }
