@@ -135,7 +135,7 @@ void writeFrameToVideoWriter() {
             videoWriter.write(painted_frame);
             lastFrameId = painted_frame_id;
         } else {
-            this_thread::sleep_for(chrono::milliseconds(10));
+            this_thread::sleep_for(chrono::milliseconds(25));
         }
     }
 }
@@ -168,7 +168,7 @@ void showFrameToVideoOutput() {
             frameCount=0;
             lastTime=nowTime;
         }
-        this_thread::sleep_for(chrono::milliseconds(10));
+        this_thread::sleep_for(chrono::milliseconds(25));
 
 
     }
@@ -439,7 +439,7 @@ int main(int argc, char *argv[]) {
         painted_frame_id = frame_id;
 
 
-        pressed_key = waitKey(1);
+        pressed_key = waitKey(25);
         readData.clear();
         serialPort.Read(readData);
 
