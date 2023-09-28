@@ -322,8 +322,8 @@ void showFrameToVideoOutput() {
             frameCount = 0;
             lastTime = nowTime;
         }
+        this_thread::sleep_for(chrono::milliseconds(25));
 
-        pressed_key=waitKey(25);
 
     }
 }
@@ -584,6 +584,10 @@ int main(int argc, char *argv[]) {
 
         painted_frame = frame.clone();
         painted_frame_id = frame_id;
+
+
+        pressed_key = waitKey(25);
+
 
 //        if (frame_id % 30 == 0) {
 //            cout << " OPENCV FPS " << getTickFrequency() / (getTickCount() - tickCount) << endl;
