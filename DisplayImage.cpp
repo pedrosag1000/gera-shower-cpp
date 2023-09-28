@@ -193,7 +193,7 @@ int main(int argc, char *argv[]) {
              << "3) Video display width in pixel - this number should be less than webcam width (like 1920 or 1080 or 756 or etc)"
              << endl
              << "4) Video output file (GStreamer pipeline) " << endl
-             << "For example:" << endl
+             << "Fory example:" << endl
              << "./DisplayImage 192.168.1.100 /dev/ttyTHS2 1920 GSTREAMER_PIPELINE" << endl;;
         return 1;
     }
@@ -212,11 +212,13 @@ int main(int argc, char *argv[]) {
     serialPort.Open();
     cout << "Serial port is opened" << endl;
 
+
     // WARNING: If using the Arduino Uno or similar, you may want to delay here, as opening the serial port causes
     // the micro to reset!
 
     // Read some data back (will block for up to 100ms due to the SetTimeout(100) call above)
     string readData, allReadData;
+
     char startChar = char(255), secondStartChar = char(254);
     bool isDataStarted = false;
     int startPosition = -1, endPosition = -1,serialLength=0;
@@ -512,6 +514,7 @@ int main(int argc, char *argv[]) {
         } else {
 
             if (allReadData.size() >= serialLength) {
+
                 cout<<"data chunk recieved"<<endl;
                 allReadData=allReadData.substr(serialLength,allReadData.size());
                 auto data = allReadData.substr(0, serialLength);
@@ -555,7 +558,7 @@ int main(int argc, char *argv[]) {
                 // flush
                 allReadData.clear();
             } else {
-                cout << "waiting for data to be finished" << endl;
+                cout << "waiting for data to be finished.. remaining byte: "<<serialLength-allReadData.size() << endl;
             }
         }
 
