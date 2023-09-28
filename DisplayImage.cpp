@@ -504,11 +504,12 @@ int main(int argc, char *argv[]) {
         if (!isDataStarted) {
             startPosition = allReadData.find(startChar);
             if(startPosition >= 0 && allReadData.size() >= 4 && allReadData[startPosition+1]==secondStartChar && allReadData[startPosition+2]==(char)18){
-                allReadData = allReadData.substr(startPosition + 4, allReadData.length());
+
                 isDataStarted = true;
                 startPosition = -1;
                 serialLength=allReadData[3];
 
+                allReadData = allReadData.substr(startPosition + 4, allReadData.length());
                 cout<<"data started with length: "<<serialLength<<endl;
             }
         } else {
