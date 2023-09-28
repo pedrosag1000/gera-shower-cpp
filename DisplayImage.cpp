@@ -503,10 +503,13 @@ int main(int argc, char *argv[]) {
                 isDataStarted = true;
                 startPosition = -1;
                 serialLength=allReadData[3];
+
+                cout<<"data started with length: "<<serialLength<<endl;
             }
         } else {
 
             if (allReadData.size() >= serialLength) {
+                cout<<"data chunk recieved"<<endl;
                 allReadData=allReadData.substr(serialLength,allReadData.size());
                 auto data = allReadData.substr(0, serialLength);
 
