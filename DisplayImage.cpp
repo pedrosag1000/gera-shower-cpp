@@ -114,6 +114,7 @@ void openVideoCapture(bool force = false) {
 }
 
 void setVideoCaptureAddressByIP(string ip) {
+    cout<<"IP Address of video capture: "<<ip<<endl;
     string first = "rtspsrc location=rtsp://admin:Admin1401@";
     string second = ":554/streaming/channels/101 latency=10 is-live=true drop-on-latency=1 tcp-timeout=1000 teardown-timeout=1000 timeout=1000 ! rtph264depay ! h264parse ! decodebin ! autovideoconvert ! video/x-raw,format=BGRx ! videoconvert ! video/x-raw,format=BGR ! appsink drop=true sync=false";
     auto tmp = first + ip + second;
