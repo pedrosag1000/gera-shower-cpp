@@ -545,14 +545,14 @@ int main(int argc, char *argv[]) {
                     if (zoom < 1)
                         zoom = 1;
 
-                    cout<<"radar angle: "<<radar_angle<<endl;
-                    cout<<"vertical angle: "<<vertical_angle<<endl;
-                    cout<<"horizental angle: "<<horizental_angle<<endl;
-                    cout<<"zoom: "<<zoom<<endl;
-                    cout<<"ip: "<<to_string(allReadData[6]) + '.' +
-                                  to_string(allReadData[7]) + '.' +
-                                  to_string(allReadData[8]) + '.' +
-                                  to_string(allReadData[9])<<endl;
+//                    cout<<"radar angle: "<<radar_angle<<endl;
+//                    cout<<"vertical angle: "<<vertical_angle<<endl;
+//                    cout<<"horizental angle: "<<horizental_angle<<endl;
+//                    cout<<"zoom: "<<zoom<<endl;
+//                    cout<<"ip: "<<to_string(allReadData[6]) + '.' +
+//                                  to_string(allReadData[7]) + '.' +
+//                                  to_string(allReadData[8]) + '.' +
+//                                  to_string(allReadData[9])<<endl;
 
 
 
