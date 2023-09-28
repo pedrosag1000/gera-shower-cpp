@@ -17,6 +17,13 @@ using namespace mn::CppLinuxSerial;
 int ip1 = 0, ip2 = 0, ip3 = 0, ip4 = 0;
 
 
+int radar_angle = -100, radar_size_of_angle = 20;
+int view_angle = -100, view_size_of_angle = 20;
+int horizental_angle = 60, vertical_angle = 60;
+double zoom = 1;
+
+SerialPort serialPort;
+
 const vector<string> explode(const string &s, const char &c) {
     string buff{""};
     vector<string> v;
@@ -130,6 +137,149 @@ void setVideoCaptureAddressByIP(string ip) {
     }
 }
 
+
+void sendAndReceiveDataFromToThread(){
+    string readData,allReadData="";
+    char startChar = char(255), secondStartChar = char(254);
+    bool isDataStarted = false;
+    int startPosition = -1, serialLength = 0;
+
+    while(true)
+    {
+        readData.clear();
+        serialPort.Read(readData);
+
+        if (lastTouchReported != touchId || frame_id % 10 == 0) {
+            outputBuffer = "";
+            int checksum = 0;
+            //start flags
+            outputBuffer += (char) 255;
+            outputBuffer += (char) 254;
+            //lenght of packets
+            outputBuffer += (char) 18;
+            outputBuffer += (char) 15;
+
+            outputBuffer += (char) radar_angle / 256;
+            outputBuffer += (char) radar_angle % 256;
+            outputBuffer += (char) view_angle + 100;
+            outputBuffer += (char) vertical_angle;
+            outputBuffer += (char) horizental_angle;
+            outputBuffer += (char) zoom * 10;
+            outputBuffer += (char) ip1;
+            outputBuffer += (char) ip2;
+            outputBuffer += (char) ip3;
+            outputBuffer += (char) ip4;
+
+            outputBuffer += (char) touchedPoint.x / 256;
+            outputBuffer += (char) touchedPoint.x % 256;
+
+            outputBuffer += (char) touchedPoint.y / 256;
+            outputBuffer += (char) touchedPoint.y % 256;
+
+            checksum += (char) radar_angle / 256;
+            checksum += (char) radar_angle % 256;
+            checksum += (char) view_angle + 100;
+            checksum += (char) vertical_angle;
+            checksum += (char) horizental_angle;
+            checksum += (char) zoom * 10;
+            checksum += (char) ip1;
+            checksum += (char) ip2;
+            checksum += (char) ip3;
+            checksum += (char) ip4;
+
+
+            checksum += (char) touchedPoint.x / 256;
+            checksum += (char) touchedPoint.x % 256;
+
+            checksum += (char) touchedPoint.y / 256;
+            checksum += (char) touchedPoint.y % 256;
+
+            outputBuffer += (char) checksum % 256;
+            //checksum
+
+            serialPort.Write(outputBuffer);
+
+            lastTouchReported = touchId;
+        }
+
+        allReadData.append(readData);
+
+        if (!isDataStarted) {
+            startPosition = allReadData.find(startChar);
+            if (startPosition >= 0 && allReadData.size() >= 4 && allReadData[startPosition + 1] == secondStartChar &&
+                allReadData[startPosition + 2] == (char) 18) {
+
+                isDataStarted = true;
+                startPosition = -1;
+                serialLength = allReadData[3];
+
+                allReadData = allReadData.substr(startPosition + 5, allReadData.length());
+
+            }
+        } else {
+
+            if (allReadData.size() >= serialLength) {
+
+
+                auto data = allReadData.substr(0, serialLength);
+
+                // process data in allReadData
+
+
+
+                //radar 2 byte
+                //view angle 1 byte
+                //vertical angle 1 byte
+                //horizental angle 1 byte
+                //zoom 1 byte
+
+                radar_angle = allReadData[0] * 256 + allReadData[1];
+
+                //   cout << "Processed data: " << allReadData << endl;
+
+                view_angle = (int) allReadData[2] - 100;
+                vertical_angle = (int) allReadData[3];
+                horizental_angle = (int) allReadData[4];
+                zoom = (int) allReadData[5] / 10;
+
+
+                setVideoCaptureAddressByIP(
+                        to_string(allReadData[6]) + '.' +
+                        to_string(allReadData[7]) + '.' +
+                        to_string(allReadData[8]) + '.' +
+                        to_string(allReadData[9]));
+
+                if (zoom < 1)
+                    zoom = 1;
+
+//                    cout<<"radar angle: "<<radar_angle<<endl;
+//                    cout<<"vertical angle: "<<vertical_angle<<endl;
+//                    cout<<"horizental angle: "<<horizental_angle<<endl;
+//                    cout<<"zoom: "<<zoom<<endl;
+//                    cout<<"ip: "<<to_string(allReadData[6]) + '.' +
+//                                  to_string(allReadData[7]) + '.' +
+//                                  to_string(allReadData[8]) + '.' +
+//                                  to_string(allReadData[9])<<endl;
+
+
+
+                isDataStarted = false;
+
+                // flush
+                allReadData = allReadData.substr(serialLength, allReadData.size());
+            } else {
+//                cout << "waiting for data to be finished.. remaining byte: "<<serialLength-allReadData.size() << endl;
+            }
+        }
+
+
+        this_thread::sleep_for(chrono::milliseconds(100));
+    }
+
+
+}
+
+
 void writeFrameToVideoWriter() {
     int lastFrameId = 0;
     while (pressed_key != 27) {
@@ -186,6 +336,7 @@ void mouseCallback(int event, int x, int y, int flags, void *userdata) {
 
 
 int main(int argc, char *argv[]) {
+    double ratio = 1;
     if (argc != 5) {
 
         cout << "You should insert 4 args" << endl
@@ -207,7 +358,7 @@ int main(int argc, char *argv[]) {
 
     // Create serial port object and open serial port at 57600 buad, 8 data bits, no parity bit, one stop bit (8n1),
     // and no flow control
-    SerialPort serialPort(argv[2], BaudRate::B_115200, NumDataBits::EIGHT, Parity::NONE, NumStopBits::ONE);
+    serialPort=SerialPort(argv[2], BaudRate::B_115200, NumDataBits::EIGHT, Parity::NONE, NumStopBits::ONE);
     // Use SerialPort serialPort("/dev/ttyACM0", 13000); instead if you want to provide a custom baud rate
     serialPort.SetTimeout(1); // Block for up to 0ms to receive data
     serialPort.Open();
@@ -218,16 +369,7 @@ int main(int argc, char *argv[]) {
     // the micro to reset!
 
     // Read some data back (will block for up to 100ms due to the SetTimeout(100) call above)
-    string readData, allReadData;
 
-    char startChar = char(255), secondStartChar = char(254);
-    bool isDataStarted = false;
-    int startPosition = -1, serialLength = 0;
-
-    int radar_angle = -100, radar_size_of_angle = 20;
-    int view_angle = -100, view_size_of_angle = 20;
-    int horizental_angle = 60, vertical_angle = 60;
-    double zoom = 1, ratio = 1;
 
     namedWindow(" ", WINDOW_NORMAL);
     //For use opengl
@@ -243,6 +385,7 @@ int main(int argc, char *argv[]) {
     cout << "splash screen read" << endl;
 
     thread showVideoThread(showFrameToVideoOutput);
+    thread serialThread(sendAndReceiveDataFromToThread);
 
 
     openVideoCapture();
@@ -441,131 +584,7 @@ int main(int argc, char *argv[]) {
 
 
         pressed_key = waitKey(1);
-        readData.clear();
-        serialPort.Read(readData);
 
-        if (lastTouchReported != touchId || frame_id % 10 == 0) {
-            outputBuffer = "";
-            int checksum = 0;
-            //start flags
-            outputBuffer += (char) 255;
-            outputBuffer += (char) 254;
-            //lenght of packets
-            outputBuffer += (char) 18;
-            outputBuffer += (char) 15;
-
-            outputBuffer += (char) radar_angle / 256;
-            outputBuffer += (char) radar_angle % 256;
-            outputBuffer += (char) view_angle + 100;
-            outputBuffer += (char) vertical_angle;
-            outputBuffer += (char) horizental_angle;
-            outputBuffer += (char) zoom * 10;
-            outputBuffer += (char) ip1;
-            outputBuffer += (char) ip2;
-            outputBuffer += (char) ip3;
-            outputBuffer += (char) ip4;
-
-            outputBuffer += (char) touchedPoint.x / 256;
-            outputBuffer += (char) touchedPoint.x % 256;
-
-            outputBuffer += (char) touchedPoint.y / 256;
-            outputBuffer += (char) touchedPoint.y % 256;
-
-            checksum += (char) radar_angle / 256;
-            checksum += (char) radar_angle % 256;
-            checksum += (char) view_angle + 100;
-            checksum += (char) vertical_angle;
-            checksum += (char) horizental_angle;
-            checksum += (char) zoom * 10;
-            checksum += (char) ip1;
-            checksum += (char) ip2;
-            checksum += (char) ip3;
-            checksum += (char) ip4;
-
-
-            checksum += (char) touchedPoint.x / 256;
-            checksum += (char) touchedPoint.x % 256;
-
-            checksum += (char) touchedPoint.y / 256;
-            checksum += (char) touchedPoint.y % 256;
-
-            outputBuffer += (char) checksum % 256;
-            //checksum
-
-            serialPort.Write(outputBuffer);
-
-            lastTouchReported = touchId;
-        }
-
-        allReadData.append(readData);
-
-        if (!isDataStarted) {
-            startPosition = allReadData.find(startChar);
-            if (startPosition >= 0 && allReadData.size() >= 4 && allReadData[startPosition + 1] == secondStartChar &&
-                allReadData[startPosition + 2] == (char) 18) {
-
-                isDataStarted = true;
-                startPosition = -1;
-                serialLength = allReadData[3];
-
-                allReadData = allReadData.substr(startPosition + 5, allReadData.length());
-
-            }
-        } else {
-
-            if (allReadData.size() >= serialLength) {
-
-
-                auto data = allReadData.substr(0, serialLength);
-
-                // process data in allReadData
-
-
-
-                //radar 2 byte
-                //view angle 1 byte
-                //vertical angle 1 byte
-                //horizental angle 1 byte
-                //zoom 1 byte
-
-                radar_angle = allReadData[0] * 256 + allReadData[1];
-
-                //   cout << "Processed data: " << allReadData << endl;
-
-                view_angle = (int) allReadData[2] - 100;
-                vertical_angle = (int) allReadData[3];
-                horizental_angle = (int) allReadData[4];
-                zoom = (int) allReadData[5] / 10;
-
-
-                setVideoCaptureAddressByIP(
-                        to_string(allReadData[6]) + '.' +
-                        to_string(allReadData[7]) + '.' +
-                        to_string(allReadData[8]) + '.' +
-                        to_string(allReadData[9]));
-
-                if (zoom < 1)
-                    zoom = 1;
-
-//                    cout<<"radar angle: "<<radar_angle<<endl;
-//                    cout<<"vertical angle: "<<vertical_angle<<endl;
-//                    cout<<"horizental angle: "<<horizental_angle<<endl;
-//                    cout<<"zoom: "<<zoom<<endl;
-//                    cout<<"ip: "<<to_string(allReadData[6]) + '.' +
-//                                  to_string(allReadData[7]) + '.' +
-//                                  to_string(allReadData[8]) + '.' +
-//                                  to_string(allReadData[9])<<endl;
-
-
-
-                isDataStarted = false;
-
-                // flush
-                allReadData = allReadData.substr(serialLength, allReadData.size());
-            } else {
-//                cout << "waiting for data to be finished.. remaining byte: "<<serialLength-allReadData.size() << endl;
-            }
-        }
 
 //        if (frame_id % 30 == 0) {
 //            cout << " OPENCV FPS " << getTickFrequency() / (getTickCount() - tickCount) << endl;
