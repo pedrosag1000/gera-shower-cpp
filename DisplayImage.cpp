@@ -307,11 +307,13 @@ void showFrameToVideoOutput() {
     auto nowTime = lastTime;
     while (pressed_key != 27) {
         nowTime = currentMS();
+
         delta = painted_frame_id - frameId;
         if (delta != 0 || true) {
             frameId += delta;
             frameCount++;
-            imshow(" ", painted_frame);
+            if(!painted_frame.empty())
+                imshow(" ", painted_frame);
         }
 
         if (frameCount > 30) {
