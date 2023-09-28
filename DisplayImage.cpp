@@ -495,7 +495,10 @@ int main(int argc, char *argv[]) {
         }
 
         allReadData.append(readData);
-
+        if(!readData.empty())
+        {
+            cout<<"Data: "<<readData<<endl;
+        }
         if (!isDataStarted) {
             startPosition = allReadData.find(startChar);
             if(startPosition >= 0 && allReadData.size() >= 4 && allReadData[startPosition+1]==secondStartChar && allReadData[startPosition+2]==(char)18){
