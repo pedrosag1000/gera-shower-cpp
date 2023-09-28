@@ -497,10 +497,7 @@ int main(int argc, char *argv[]) {
         }
 
         allReadData.append(readData);
-        if(!readData.empty())
-        {
-            cout<<"Data: "<<readData<<endl;
-        }
+
         if (!isDataStarted) {
             startPosition = allReadData.find(startChar);
             if(startPosition >= 0 && allReadData.size() >= 4 && allReadData[startPosition+1]==secondStartChar && allReadData[startPosition+2]==(char)18){
@@ -510,13 +507,13 @@ int main(int argc, char *argv[]) {
                 serialLength=allReadData[3];
 
                 allReadData = allReadData.substr(startPosition + 5, allReadData.length());
-                cout<<"data started with length: "<<serialLength<<endl;
+
             }
         } else {
 
             if (allReadData.size() >= serialLength) {
 
-                cout<<"data chunk recieved"<<endl;
+
                 auto data = allReadData.substr(0, serialLength);
 
                 // process data in allReadData
@@ -564,7 +561,7 @@ int main(int argc, char *argv[]) {
                 // flush
                 allReadData=allReadData.substr(serialLength,allReadData.size());
             } else {
-                cout << "waiting for data to be finished.. remaining byte: "<<serialLength-allReadData.size() << endl;
+//                cout << "waiting for data to be finished.. remaining byte: "<<serialLength-allReadData.size() << endl;
             }
         }
 
