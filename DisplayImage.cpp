@@ -14,6 +14,24 @@ using namespace mn::CppLinuxSerial;
 
 #define PI 3.14159265
 
+int ip1=0,ip2=0,ip3=0,ip4=0;
+
+
+const vector<string> explode(const string& s, const char& c)
+{
+    string buff{""};
+    vector<string> v;
+
+    for(auto n:s)
+    {
+        if(n != c) buff+=n; else
+        if(n == c && buff != "") { v.push_back(buff); buff = ""; }
+    }
+    if(buff != "") v.push_back(buff);
+
+    return v;
+}
+
 
 void shutdown() {
     system("shutdown -h now");
@@ -80,6 +98,7 @@ int pressed_key = 10;
 Point touchedPoint(0, 0);
 int touchId = 0;
 int lastTouchReported = 0;
+string outputBuffer;
 
 void openVideoCapture(bool force = false) {
     while (!videoCapture.isOpened() || force) {
@@ -98,6 +117,11 @@ void setVideoCaptureAddressByIP(string ip) {
     string first = "rtspsrc location=rtsp://admin:Admin1401@";
     string second = ":554/streaming/channels/101 latency=10 is-live=true drop-on-latency=1 tcp-timeout=1000 teardown-timeout=1000 timeout=1000 ! rtph264depay ! h264parse ! decodebin ! autovideoconvert ! video/x-raw,format=BGRx ! videoconvert ! video/x-raw,format=BGR ! appsink drop=true sync=false";
     auto tmp = first + ip + second;
+    auto ipTmp=explode(ip,'.');
+    ip1=stoi(ipTmp[0]);
+    ip2=stoi(ipTmp[1]);
+    ip3=stoi(ipTmp[2]);
+    ip4=stoi(ipTmp[3]);
     if (tmp != videoCaptureAddress) {
         videoCapture.release();
         videoCaptureAddress = tmp;
@@ -193,9 +217,9 @@ int main(int argc, char *argv[]) {
 
     // Read some data back (will block for up to 100ms due to the SetTimeout(100) call above)
     string readData, allReadData;
-    char startChar = char(255), endChar = char(254);
+    char startChar = char(255), secondStartChar = char(254);
     bool isDataStarted = false;
-    int startPosition = -1, endPosition = -1;
+    int startPosition = -1, endPosition = -1,serialLength=0;
 
     int radar_angle = -100, radar_size_of_angle = 20;
     int view_angle = -100, view_size_of_angle = 20;
@@ -415,14 +439,57 @@ int main(int argc, char *argv[]) {
 
         pressed_key = waitKey(1);
         readData.clear();
-        //serialPort.Read(readData);
+        serialPort.Read(readData);
 
-        if (lastTouchReported != touchId) {
-//            serialPort.Write("touched:");
-//            serialPort.Write(to_string(touchedPoint.x));
-//            serialPort.Write(",");
-//            serialPort.Write(to_string(touchedPoint.y));
-//            serialPort.Write("\n");
+        if (lastTouchReported != touchId || frame_id%10==0) {
+            outputBuffer="";
+            uint8_t checksum=0;
+            //start flags
+            outputBuffer+=(char)255;
+            outputBuffer+=(char)254;
+            //lenght of packets
+            outputBuffer+=(char)10;
+
+            outputBuffer+= (char)radar_angle/256;
+            outputBuffer+= (char)radar_angle%256;
+            outputBuffer+= (char)view_angle+100;
+            outputBuffer+= (char)vertical_angle;
+            outputBuffer+= (char)horizental_angle;
+            outputBuffer+= (char)zoom*10;
+            outputBuffer+= (char)ip1;
+            outputBuffer+= (char)ip2;
+            outputBuffer+= (char)ip3;
+            outputBuffer+= (char)ip4;
+
+            outputBuffer+= (char)touchedPoint.x / 256;
+            outputBuffer+= (char)touchedPoint.x % 256;
+
+            outputBuffer+= (char)touchedPoint.y / 256;
+            outputBuffer+= (char)touchedPoint.y % 256;
+
+            checksum+= (char)radar_angle/256;
+            checksum+= (char)radar_angle%256;
+            checksum+= (char)view_angle+100;
+            checksum+= (char)vertical_angle;
+            checksum+= (char)horizental_angle;
+            checksum+= (char)zoom*10;
+            checksum+= (char)ip1;
+            checksum+= (char)ip2;
+            checksum+= (char)ip3;
+            checksum+= (char)ip4;
+
+
+            checksum+= (char)touchedPoint.x / 256;
+            checksum+= (char)touchedPoint.x % 256;
+
+            checksum+= (char)touchedPoint.y / 256;
+            checksum+= (char)touchedPoint.y % 256;
+
+            //checksum
+
+            serialPort.Write(outputBuffer);
+            serialPort.WriteBinary({checksum});
+
             lastTouchReported = touchId;
         }
 
@@ -430,16 +497,17 @@ int main(int argc, char *argv[]) {
 
         if (!isDataStarted) {
             startPosition = allReadData.find(startChar);
-            if (startPosition >= 0) {
-                allReadData = allReadData.substr(startPosition + 1, allReadData.length());
+            if(startPosition >= 0 && allReadData.size() >= 4 && allReadData[startPosition+1]==secondStartChar && allReadData[startPosition+2]==12){
+                allReadData = allReadData.substr(startPosition + 4, allReadData.length());
                 isDataStarted = true;
                 startPosition = -1;
+                serialLength=allReadData[3];
             }
         } else {
-            endPosition = allReadData.find(endChar);
 
-            if (endPosition >= 0) {
-                allReadData = allReadData.substr(0, endPosition);
+            if (allReadData.size() > serialLength) {
+                allReadData=allReadData.substr(serialLength,allReadData.size());
+                auto data = allReadData.substr(0, serialLength);
 
                 // process data in allReadData
 
