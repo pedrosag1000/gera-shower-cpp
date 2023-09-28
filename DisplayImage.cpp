@@ -443,12 +443,13 @@ int main(int argc, char *argv[]) {
 
         if (lastTouchReported != touchId || frame_id%10==0) {
             outputBuffer="";
-            uint8_t checksum=0;
+            int checksum=0;
             //start flags
             outputBuffer+=(char)255;
             outputBuffer+=(char)254;
             //lenght of packets
-            outputBuffer+=(char)10;
+            outputBuffer+=(char)18;
+            outputBuffer+=(char)15;
 
             outputBuffer+= (char)radar_angle/256;
             outputBuffer+= (char)radar_angle%256;
@@ -485,10 +486,10 @@ int main(int argc, char *argv[]) {
             checksum+= (char)touchedPoint.y / 256;
             checksum+= (char)touchedPoint.y % 256;
 
+            outputBuffer+=(char)checksum%256;
             //checksum
 
             serialPort.Write(outputBuffer);
-            serialPort.WriteBinary({checksum});
 
             lastTouchReported = touchId;
         }
@@ -497,7 +498,7 @@ int main(int argc, char *argv[]) {
 
         if (!isDataStarted) {
             startPosition = allReadData.find(startChar);
-            if(startPosition >= 0 && allReadData.size() >= 4 && allReadData[startPosition+1]==secondStartChar && allReadData[startPosition+2]==12){
+            if(startPosition >= 0 && allReadData.size() >= 4 && allReadData[startPosition+1]==secondStartChar && allReadData[startPosition+2]==(char)18){
                 allReadData = allReadData.substr(startPosition + 4, allReadData.length());
                 isDataStarted = true;
                 startPosition = -1;
@@ -505,7 +506,7 @@ int main(int argc, char *argv[]) {
             }
         } else {
 
-            if (allReadData.size() > serialLength) {
+            if (allReadData.size() >= serialLength) {
                 allReadData=allReadData.substr(serialLength,allReadData.size());
                 auto data = allReadData.substr(0, serialLength);
 
@@ -518,7 +519,7 @@ int main(int argc, char *argv[]) {
                 //vertical angle 1 byte
                 //horizental angle 1 byte
                 //zoom 1 byte
-                if (allReadData.length() == 10) {
+                if (allReadData.length() == serialLength) {
 
 
                     radar_angle = allReadData[0] * 256 + allReadData[1];
