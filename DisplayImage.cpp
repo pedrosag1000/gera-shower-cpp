@@ -308,7 +308,7 @@ void showFrameToVideoOutput() {
     while (pressed_key != 27) {
         nowTime = currentMS();
         delta = painted_frame_id - frameId;
-        if (delta != 0) {
+        if (delta != 0 || true) {
             frameId += delta;
             frameCount++;
             imshow(" ", painted_frame);
