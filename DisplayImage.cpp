@@ -509,7 +509,7 @@ int main(int argc, char *argv[]) {
                 startPosition = -1;
                 serialLength=allReadData[3];
 
-                allReadData = allReadData.substr(startPosition + 4, allReadData.length());
+                allReadData = allReadData.substr(startPosition + 5, allReadData.length());
                 cout<<"data started with length: "<<serialLength<<endl;
             }
         } else {
@@ -556,7 +556,7 @@ int main(int argc, char *argv[]) {
                                   to_string(allReadData[7]) + '.' +
                                   to_string(allReadData[8]) + '.' +
                                   to_string(allReadData[9])<<endl;
-                    
+
 
 
                 isDataStarted = false;
