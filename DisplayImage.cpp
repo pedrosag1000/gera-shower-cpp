@@ -593,7 +593,7 @@ int main(int argc, char *argv[]) {
 
         if (frameCount >= 30) {
             cout << "frame id: " << painted_frame_id << " Read FPS: " << frameCount / ((nowTime - lastTime) / 1000.0)
-                 << " ";
+                 << endl;
 
             lastTime = nowTime;
             frameCount = 0;
