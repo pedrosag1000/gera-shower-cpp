@@ -23,15 +23,20 @@ or you can follow this:
 8) Copy "bmp.blob" into your "[path_to_your_bsp]/Linux_for_Tegra/bootloader/"
 
 
-You should download board image. for this, download the Nvidia SDK manager and install it on ****ubuntu 18.0.4**** (important)
-and just download the os flash things. after download files you should see downloaded files in `/home/{user}/Download/nvidia`
+You should download Jetpack 4.6.4 and rootfs filesystem. for doing this, Download the Nvidia SDK manager and install it on ****ubuntu 18.0.4**** (important)
+and just download the Jetson and Rootfs files. after download files you should see downloaded files in `/home/{user}/Download/nvidia`
 
-After extract the image file, you should replace the bmp.blob file to `bootloader` folder.
+
+Extract the Jetpack and add Rootfs files to `Linux_for_Tegra/rootfs`
+
+For changing boot logo you should replace the `bmp.blob` file in `bootloader` folder.
 
 Start your board in Force recovery mode (connect pin 3 to pin 4).
 
 Run this command on **ubuntu 18.0.4** (i think you can flash board in other ubuntu versions but if you want to be sure, run this in 18.0.4)
 
+
+**NOTE: Nvidia manager has issue in flashing jetson nano boards !!! I couldn't flash the board by that. use this command instead (manually)**
 ```shell
 sudo ./flash.sh jetson-nano-qspi mmcblk0p
 ```
@@ -81,6 +86,9 @@ make
 Run the `./DisplayImage` with needed arguments
 
 
+#### for multi stream in gstreamer check this [Link](https://gstreamer.freedesktop.org/documentation/coreelements/tee.html?gi-language=c)
+
+
 ## Make /dev/ttyTHS1 available in non-root mode (without sudo)
  
 ````shell
@@ -99,9 +107,9 @@ KERNEL=="ttyTHS*", MODE="0666"
 
 Open Startup Applications via the Activities overview. Alternatively you can press `Alt + F2` and run the `gnome-session-properties` command.
  
-Fill the command field with your application command.
+Fill the command field with your application command. (Running the application from the outside of his folder will raise an exception on loading resources ... please run the application from his folder)
 
+Note:
 
-
-"rtspsrc location=rtsp://admin:Admin1401@192.168.1.64:554/streaming/channels/103 latency=10 drop-on-latency=1 ! rtph264depay ! h264parse ! decodebin ! autovideoconvert ! video/x-raw,format=BGRx ! videoconvert ! video/x-raw,format=BGR ! appsink drop=true sync=false" /dev/ttyTHS1 1080 "appsrc ! video/x-raw, format=BGR ! queue ! videoconvert ! video/x-raw,format=NV12 ! autovideoconvert ! x265enc ! h265parse ! qtmux ! filesink location=video1.mp4 sync=false" 
-"rtspsrc location=rtsp://admin:Admin1401@192.168.1.64:554/streaming/channels/103 latency=10 drop-on-latency=1 ! rtph264depay ! h264parse ! avdec_h264 ! appsink drop=true sync=false" /dev/ttyTHS1 1080 "appsrc ! video/x-raw, format=BGR ! queue ! videoconvert ! video/x-raw,format=NV12 ! autovideoconvert ! x265enc ! h265parse ! qtmux ! filesink location=video1.mp4 sync=false" 
+I'd tried another solution for run an application on the os startup but I failed because, the application could not read display size. 
+In this method you just add your command in ~/.xsessionrc (more info [Here](https://unix.stackexchange.com/questions/281858/difference-between-xinitrc-xsession-and-xsessionrc))

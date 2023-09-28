@@ -1,7 +1,6 @@
 #include <opencv2/opencv.hpp>
 #include <math.h>
 #include <CppLinuxSerial/SerialPort.hpp>
-#include <string.h>
 #include <chrono>
 #include <ctime>
 #include <thread>
@@ -16,11 +15,10 @@ using namespace mn::CppLinuxSerial;
 #define PI 3.14159265
 
 
-void shutdown(){
-    //TODO uncomment this for shuting down
+void shutdown() {
     system("shutdown -h now");
-    //exit(1);
 }
+
 void
 draw_text_center(Mat frame, string text, Point center, int fontFace, double fontScale, Scalar color, int thickness) {
     int baseLine = 0;
@@ -72,104 +70,94 @@ draw_arch(Mat frame, Point center, int circle_radius, int view_angle, int size_o
     }
 }
 
-int findCharInString(const string &s, const char &c) {
-    for (int i = 0; i < s.length(); i++)
-        if (s[i] == c)
-            return i;
-    return -1;
-}
 
-vector<string> explode(const string &s, const char &c) {
-    string buff{""};
-    vector<string> v;
-
-    for (auto n: s) {
-        if (n != c)
-            buff += n;
-        else if (n == c && buff != "") {
-            v.push_back(buff);
-            buff = "";
-        }
-    }
-    if (buff != "")
-        v.push_back(buff);
-
-    return v;
-}
-
-VideoWriter video;
-VideoCapture cap;
+VideoWriter videoWriter;
+VideoCapture videoCapture;
 string videoCaptureAddress;
 int frame_id = 0, painted_frame_id = 0;
-Mat frame, originalFrame,painted_frame,splashScreen;
+Mat frame, originalFrame, painted_frame, splashScreen;
 int pressed_key = 10;
-Point touchedPoint(0,0);
-int touchId=0;
-int lastTouchReported=0;
+Point touchedPoint(0, 0);
+int touchId = 0;
+int lastTouchReported = 0;
 
-void openVideoCapture(bool force=false){
-
-    while(!cap.isOpened() || force) {
-        cout<<"Waiting for camera"<<endl;
-        imshow(" ",splashScreen);
+void openVideoCapture(bool force = false) {
+    while (!videoCapture.isOpened() || force) {
+        cout << "Waiting for camera" << endl;
+        painted_frame =splashScreen;
+        painted_frame_id++;
         cout.flush();
         waitKey(1000);
-        cap.release();
-        cap=VideoCapture(videoCaptureAddress, CAP_GSTREAMER);
-        force=false;
+        videoCapture.release();
+        videoCapture = VideoCapture(videoCaptureAddress, CAP_GSTREAMER);
+        force = false;
     }
 }
 
-void setVideoCaptureAddressByIP(string ip){
-    string first="rtspsrc location=rtsp://admin:Admin1401@";
-    string second=":554/streaming/channels/101 latency=10 is-live=true drop-on-latency=1 tcp-timeout=1000 teardown-timeout=1000 timeout=1000 ! rtph264depay ! h264parse ! decodebin ! autovideoconvert ! video/x-raw,format=BGRx ! videoconvert ! video/x-raw,format=BGR ! appsink drop=true sync=false";
-    auto tmp=first+ip+second;
-    if(tmp!=videoCaptureAddress)
-    {
-	cap.release();
-	videoCaptureAddress=tmp;
+void setVideoCaptureAddressByIP(string ip) {
+    string first = "rtspsrc location=rtsp://admin:Admin1401@";
+    string second = ":554/streaming/channels/101 latency=10 is-live=true drop-on-latency=1 tcp-timeout=1000 teardown-timeout=1000 timeout=1000 ! rtph264depay ! h264parse ! decodebin ! autovideoconvert ! video/x-raw,format=BGRx ! videoconvert ! video/x-raw,format=BGR ! appsink drop=true sync=false";
+    auto tmp = first + ip + second;
+    if (tmp != videoCaptureAddress) {
+        videoCapture.release();
+        videoCaptureAddress = tmp;
     }
 }
 
-void captureFrame() {
-
+void writeFrameToVideoWriter() {
     int lastFrameId = 0;
     while (pressed_key != 27) {
         if (lastFrameId != painted_frame_id) {
-            video.write(painted_frame);
+            videoWriter.write(painted_frame);
             lastFrameId = painted_frame_id;
         } else {
-            this_thread::sleep_for(chrono::milliseconds(25));
+            this_thread::sleep_for(chrono::milliseconds(10));
         }
     }
-
 }
-void mouseCallback(int event, int x, int y, int flags, void* userdata)
+
+long currentMS()
 {
-    if  ( event == EVENT_LBUTTONDOWN )
-    {
-        setVideoCaptureAddressByIP("192.168.1.100");
-        touchedPoint=Point(x,y);
+    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+}
+
+void showFrameToVideoOutput() {
+    int frameId = 0,frameCount=0;
+
+    int delta=0;
+
+
+    auto lastTime = currentMS();
+    auto nowTime= lastTime;
+    while (pressed_key != 27) {
+        nowTime=currentMS();
+        delta= painted_frame_id - frameId;
+        if (delta!=0) {
+            frameId += delta;
+            frameCount++;
+            imshow(" ", painted_frame);
+        }
+
+        if(frameCount > 30)
+        {
+            cout<<"Show FPS: " << frameCount/((nowTime-lastTime)/1000.0)<<" ";
+            frameCount=0;
+            lastTime=nowTime;
+        }
+        this_thread::sleep_for(chrono::milliseconds(10));
+
+
+    }
+}
+
+
+void mouseCallback(int event, int x, int y, int flags, void *userdata) {
+    if (event == EVENT_LBUTTONDOWN) {
+        touchedPoint = Point(x, y);
         touchId++;
         cout << "Left button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
     }
-    else if  ( event == EVENT_RBUTTONDOWN )
-    {
-        cout << "Right button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
-    }
-    else if  ( event == EVENT_MBUTTONDOWN )
-    {
-        cout << "Middle button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
-    }
-    else if ( event == EVENT_MOUSEMOVE )
-    {
-        //    cout << "Mouse move over the window - position (" << x << ", " << y << ")" << endl;
-
-    }
-    //    cout << "Mouse move over the window - position (" << x << ", " << y << ")" << endl;
-
 }
-
 
 
 int main(int argc, char *argv[]) {
@@ -180,9 +168,9 @@ int main(int argc, char *argv[]) {
              << "2) Serial port address (like: /dev/ttyTHS1 or /dev/ttyS0 or etc)" << endl
              << "3) Video display width in pixel - this number should be less than webcam width (like 1920 or 1080 or 756 or etc)"
              << endl
-             << "4) Video output file (GStreamer) " << endl
+             << "4) Video output file (GStreamer pipeline) " << endl
              << "For example:" << endl
-             << "./DisplayImage /dev/video1 /dev/ttyTHS2 1920 1080" << endl;;
+             << "./DisplayImage 192.168.1.100 /dev/ttyTHS2 1920 GSTREAMER_PIPELINE" << endl;;
         return 1;
     }
 
@@ -190,7 +178,7 @@ int main(int argc, char *argv[]) {
     int display_width = stoi(argv[3]);
 
 
-    splashScreen=imread("splash.png");
+    splashScreen = imread("splash.png");
 
     // Create serial port object and open serial port at 57600 buad, 8 data bits, no parity bit, one stop bit (8n1),
     // and no flow control
@@ -212,25 +200,30 @@ int main(int argc, char *argv[]) {
     int radar_angle = -100, radar_size_of_angle = 20;
     int view_angle = -100, view_size_of_angle = 20;
     int horizental_angle = 60, vertical_angle = 60;
-    double zoom = 1,ratio=1;
+    double zoom = 1, ratio = 1;
 
     namedWindow(" ", WINDOW_NORMAL);
-    setMouseCallback(" ", mouseCallback, NULL);
+    //For use opengl
+    //namedWindow(" ", WINDOW_OPENGL);
+    setMouseCallback(" ", mouseCallback, nullptr);
     setWindowProperty(" ", WND_PROP_FULLSCREEN, WINDOW_FULLSCREEN);
 
     setVideoCaptureAddressByIP(argv[1]);
     cout << "Video address: " << videoCaptureAddress << endl;
 
-    cout << "Camera connection is oppened" << endl;
+    cout << "Camera connection is opened" << endl;
 
-    cout<<"splash screen read"<<endl;
+    cout << "splash screen read" << endl;
+
+    thread showVideoThread(showFrameToVideoOutput);
+
 
     openVideoCapture();
 
-    cap >> originalFrame;
+    videoCapture >> originalFrame;
     int sourceWidth = originalFrame.cols;
     int sourceHeight = originalFrame.rows;
-    int width=sourceWidth,height=sourceHeight;
+    int width = sourceWidth, height = sourceHeight;
 
     if (width > display_width) {
         ratio = (double) display_width / sourceWidth;
@@ -245,14 +238,19 @@ int main(int argc, char *argv[]) {
     cout << "Video writer started with : " << width << "x" << height << endl;
 
 
-    video.open(argv[4], CAP_GSTREAMER, 0, (double) 30, Size(width, height));
+    videoWriter.open(argv[4], CAP_GSTREAMER, 0, (double) 30, Size(width, height));
 
 
-    thread videoThread(captureFrame);
+    thread writerVideoThread(writeFrameToVideoWriter);
+
+    auto lastTime = currentMS();
+    auto nowTime= lastTime;
+    int frameCount=0;
 
 
     while (pressed_key != 27) {
 
+        nowTime=currentMS();
         long long tickCount = getTickCount();
         time(&now);
         currentTime = localtime(&now);
@@ -260,16 +258,16 @@ int main(int argc, char *argv[]) {
 
 
         frame_id = (frame_id + 1) % 360;
-
+        frameCount++;
 
         do {
             openVideoCapture(originalFrame.empty());
-            cap >> originalFrame;
+            videoCapture >> originalFrame;
         } while (originalFrame.empty());
 
 
-        sourceWidth=originalFrame.cols;
-        sourceHeight=originalFrame.rows;
+        sourceWidth = originalFrame.cols;
+        sourceHeight = originalFrame.rows;
 
         if (width > display_width) {
             ratio = (double) display_width / sourceWidth;
@@ -282,7 +280,9 @@ int main(int argc, char *argv[]) {
         // zoom the image
         double realZoom = sqrt(zoom);
 
-        Mat resized = originalFrame(Rect(
+        Mat resized = originalFrame.clone();
+
+        resized = originalFrame(Rect(
                 (sourceWidth / (2 * realZoom)) * (realZoom - 1),
                 (sourceHeight / (2 * realZoom)) * (realZoom - 1),
                 sourceWidth - ((sourceWidth / realZoom) * (realZoom - 1)),
@@ -397,34 +397,33 @@ int main(int argc, char *argv[]) {
         draw_text_center(frame, string(dateTimeChar), Point(4 * line_width, line_height), FONT_HERSHEY_SIMPLEX, 0.5,
                          Scalar(0, 0, 255), 1);
 
-        bool red=false;
+        bool red = false;
 
-        if(touchedPoint.x > 0 && touchedPoint.x < 2*line_width &&
-           touchedPoint.y > height-line_width && touchedPoint.y < height)
-        {
-            red=true;
+        if (touchedPoint.x > 0 && touchedPoint.x < 2 * line_width &&
+            touchedPoint.y > height - line_width && touchedPoint.y < height) {
+            red = true;
             shutdown();
         }
 
-        draw_text_center(frame, "Power OFF",Point(line_width,height-line_height),FONT_HERSHEY_SIMPLEX,1,red?Scalar(0,0,255):Scalar(0,255,0),1);
+        draw_text_center(frame, "Power OFF", Point(line_width, height - line_height), FONT_HERSHEY_SIMPLEX, 1,
+                         red ? Scalar(0, 0, 255) : Scalar(0, 255, 0), 1);
 
 
-        painted_frame = frame;
+        painted_frame = frame.clone();
         painted_frame_id = frame_id;
-        imshow(" ", frame);
 
 
         pressed_key = waitKey(1);
         readData.clear();
-        serialPort.Read(readData);
+        //serialPort.Read(readData);
 
-        if(lastTouchReported!=touchId) {
-            serialPort.Write("touched:");
-            serialPort.Write(to_string(touchedPoint.x));
-            serialPort.Write(",");
-            serialPort.Write(to_string(touchedPoint.y));
-            serialPort.Write("\n");
-            lastTouchReported=touchId;
+        if (lastTouchReported != touchId) {
+//            serialPort.Write("touched:");
+//            serialPort.Write(to_string(touchedPoint.x));
+//            serialPort.Write(",");
+//            serialPort.Write(to_string(touchedPoint.y));
+//            serialPort.Write("\n");
+            lastTouchReported = touchId;
         }
 
         allReadData.append(readData);
@@ -465,9 +464,9 @@ int main(int argc, char *argv[]) {
 
 
                     setVideoCaptureAddressByIP(
-                            to_string(allReadData[6])+'.'+
-                            to_string(allReadData[7])+'.'+
-                            to_string(allReadData[8])+'.'+
+                            to_string(allReadData[6]) + '.' +
+                            to_string(allReadData[7]) + '.' +
+                            to_string(allReadData[8]) + '.' +
                             to_string(allReadData[9]));
 
                     if (zoom < 1)
@@ -493,14 +492,22 @@ int main(int argc, char *argv[]) {
         }
 
         if (frame_id % 30 == 0) {
-            cout << "FPS " << getTickFrequency() / (getTickCount() - tickCount) << endl;
+            cout << " OPENCV FPS " << getTickFrequency() / (getTickCount() - tickCount) << endl;
+        }
+
+
+        if(frameCount>=30) {
+            cout << " READ FPS: " << frameCount / ((nowTime - lastTime) / 1000.0) << " ";
+            lastTime = nowTime;
+            frameCount = 0;
         }
     }
 
-    videoThread.join();
+    writerVideoThread.join();
+    showVideoThread.join();
     // Close the serial port
     serialPort.Close();
-    cap.release();
-    video.release();
+    videoCapture.release();
+    videoWriter.release();
     return 0;
 }
