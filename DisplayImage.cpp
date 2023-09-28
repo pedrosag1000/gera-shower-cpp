@@ -164,7 +164,7 @@ void showFrameToVideoOutput() {
 
         if(frameCount > 30)
         {
-            cout<<"Show FPS: " << frameCount/((nowTime-lastTime)/1000.0)<<" ";
+            cout<<"Show FPS: " << frameCount/((nowTime-lastTime)/1000.0)<<endl;
             frameCount=0;
             lastTime=nowTime;
         }
