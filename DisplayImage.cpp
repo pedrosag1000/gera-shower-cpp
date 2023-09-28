@@ -14,20 +14,21 @@ using namespace mn::CppLinuxSerial;
 
 #define PI 3.14159265
 
-int ip1=0,ip2=0,ip3=0,ip4=0;
+int ip1 = 0, ip2 = 0, ip3 = 0, ip4 = 0;
 
 
-const vector<string> explode(const string& s, const char& c)
-{
+const vector<string> explode(const string &s, const char &c) {
     string buff{""};
     vector<string> v;
 
-    for(auto n:s)
-    {
-        if(n != c) buff+=n; else
-        if(n == c && buff != "") { v.push_back(buff); buff = ""; }
+    for (auto n: s) {
+        if (n != c) buff += n;
+        else if (n == c && buff != "") {
+            v.push_back(buff);
+            buff = "";
+        }
     }
-    if(buff != "") v.push_back(buff);
+    if (buff != "") v.push_back(buff);
 
     return v;
 }
@@ -103,7 +104,7 @@ string outputBuffer;
 void openVideoCapture(bool force = false) {
     while (!videoCapture.isOpened() || force) {
         cout << "Waiting for camera" << endl;
-        painted_frame =splashScreen;
+        painted_frame = splashScreen;
         painted_frame_id++;
         cout.flush();
         waitKey(1000);
@@ -114,15 +115,15 @@ void openVideoCapture(bool force = false) {
 }
 
 void setVideoCaptureAddressByIP(string ip) {
-    cout<<"IP Address of video capture: "<<ip<<endl;
+    cout << "IP Address of video capture: " << ip << endl;
     string first = "rtspsrc location=rtsp://admin:Admin1401@";
     string second = ":554/streaming/channels/101 latency=10 is-live=true drop-on-latency=1 tcp-timeout=1000 teardown-timeout=1000 timeout=1000 ! rtph264depay ! h264parse ! decodebin ! autovideoconvert ! video/x-raw,format=BGRx ! videoconvert ! video/x-raw,format=BGR ! appsink drop=true sync=false";
     auto tmp = first + ip + second;
-    auto ipTmp=explode(ip,'.');
-    ip1=stoi(ipTmp[0]);
-    ip2=stoi(ipTmp[1]);
-    ip3=stoi(ipTmp[2]);
-    ip4=stoi(ipTmp[3]);
+    auto ipTmp = explode(ip, '.');
+    ip1 = stoi(ipTmp[0]);
+    ip2 = stoi(ipTmp[1]);
+    ip3 = stoi(ipTmp[2]);
+    ip4 = stoi(ipTmp[3]);
     if (tmp != videoCaptureAddress) {
         videoCapture.release();
         videoCaptureAddress = tmp;
@@ -136,40 +137,39 @@ void writeFrameToVideoWriter() {
             videoWriter.write(painted_frame);
             lastFrameId = painted_frame_id;
         } else {
-            this_thread::sleep_for(chrono::milliseconds(25));
+            this_thread::sleep_for(chrono::milliseconds(10));
         }
     }
 }
 
-long currentMS()
-{
-    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+long currentMS() {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count();
 }
 
 void showFrameToVideoOutput() {
-    int frameId = 0,frameCount=0;
+    int frameId = 0, frameCount = 0;
 
-    int delta=0;
+    int delta = 0;
 
 
     auto lastTime = currentMS();
-    auto nowTime= lastTime;
+    auto nowTime = lastTime;
     while (pressed_key != 27) {
-        nowTime=currentMS();
-        delta= painted_frame_id - frameId;
-        if (delta!=0) {
+        nowTime = currentMS();
+        delta = painted_frame_id - frameId;
+        if (delta != 0) {
             frameId += delta;
             frameCount++;
             imshow(" ", painted_frame);
         }
 
-        if(frameCount > 30)
-        {
-            cout<<"Show FPS: " << frameCount/((nowTime-lastTime)/1000.0)<<endl;
-            frameCount=0;
-            lastTime=nowTime;
+        if (frameCount > 30) {
+            cout << "Show FPS: " << frameCount / ((nowTime - lastTime) / 1000.0) << " ";
+            frameCount = 0;
+            lastTime = nowTime;
         }
-        this_thread::sleep_for(chrono::milliseconds(25));
+        this_thread::sleep_for(chrono::milliseconds(10));
 
 
     }
@@ -194,7 +194,7 @@ int main(int argc, char *argv[]) {
              << "3) Video display width in pixel - this number should be less than webcam width (like 1920 or 1080 or 756 or etc)"
              << endl
              << "4) Video output file (GStreamer pipeline) " << endl
-             << "Fory example:" << endl
+             << "For example:" << endl
              << "./DisplayImage 192.168.1.100 /dev/ttyTHS2 1920 GSTREAMER_PIPELINE" << endl;;
         return 1;
     }
@@ -222,7 +222,7 @@ int main(int argc, char *argv[]) {
 
     char startChar = char(255), secondStartChar = char(254);
     bool isDataStarted = false;
-    int startPosition = -1,serialLength=0;
+    int startPosition = -1, serialLength = 0;
 
     int radar_angle = -100, radar_size_of_angle = 20;
     int view_angle = -100, view_size_of_angle = 20;
@@ -271,13 +271,13 @@ int main(int argc, char *argv[]) {
     thread writerVideoThread(writeFrameToVideoWriter);
 
     auto lastTime = currentMS();
-    auto nowTime= lastTime;
-    int frameCount=0;
+    auto nowTime = lastTime;
+    int frameCount = 0;
 
 
     while (pressed_key != 27) {
 
-        nowTime=currentMS();
+        nowTime = currentMS();
         long long tickCount = getTickCount();
         time(&now);
         currentTime = localtime(&now);
@@ -440,56 +440,56 @@ int main(int argc, char *argv[]) {
         painted_frame_id = frame_id;
 
 
-        pressed_key = waitKey(25);
+        pressed_key = waitKey(1);
         readData.clear();
         serialPort.Read(readData);
 
-        if (lastTouchReported != touchId || frame_id%10==0) {
-            outputBuffer="";
-            int checksum=0;
+        if (lastTouchReported != touchId || frame_id % 10 == 0) {
+            outputBuffer = "";
+            int checksum = 0;
             //start flags
-            outputBuffer+=(char)255;
-            outputBuffer+=(char)254;
+            outputBuffer += (char) 255;
+            outputBuffer += (char) 254;
             //lenght of packets
-            outputBuffer+=(char)18;
-            outputBuffer+=(char)15;
+            outputBuffer += (char) 18;
+            outputBuffer += (char) 15;
 
-            outputBuffer+= (char)radar_angle/256;
-            outputBuffer+= (char)radar_angle%256;
-            outputBuffer+= (char)view_angle+100;
-            outputBuffer+= (char)vertical_angle;
-            outputBuffer+= (char)horizental_angle;
-            outputBuffer+= (char)zoom*10;
-            outputBuffer+= (char)ip1;
-            outputBuffer+= (char)ip2;
-            outputBuffer+= (char)ip3;
-            outputBuffer+= (char)ip4;
+            outputBuffer += (char) radar_angle / 256;
+            outputBuffer += (char) radar_angle % 256;
+            outputBuffer += (char) view_angle + 100;
+            outputBuffer += (char) vertical_angle;
+            outputBuffer += (char) horizental_angle;
+            outputBuffer += (char) zoom * 10;
+            outputBuffer += (char) ip1;
+            outputBuffer += (char) ip2;
+            outputBuffer += (char) ip3;
+            outputBuffer += (char) ip4;
 
-            outputBuffer+= (char)touchedPoint.x / 256;
-            outputBuffer+= (char)touchedPoint.x % 256;
+            outputBuffer += (char) touchedPoint.x / 256;
+            outputBuffer += (char) touchedPoint.x % 256;
 
-            outputBuffer+= (char)touchedPoint.y / 256;
-            outputBuffer+= (char)touchedPoint.y % 256;
+            outputBuffer += (char) touchedPoint.y / 256;
+            outputBuffer += (char) touchedPoint.y % 256;
 
-            checksum+= (char)radar_angle/256;
-            checksum+= (char)radar_angle%256;
-            checksum+= (char)view_angle+100;
-            checksum+= (char)vertical_angle;
-            checksum+= (char)horizental_angle;
-            checksum+= (char)zoom*10;
-            checksum+= (char)ip1;
-            checksum+= (char)ip2;
-            checksum+= (char)ip3;
-            checksum+= (char)ip4;
+            checksum += (char) radar_angle / 256;
+            checksum += (char) radar_angle % 256;
+            checksum += (char) view_angle + 100;
+            checksum += (char) vertical_angle;
+            checksum += (char) horizental_angle;
+            checksum += (char) zoom * 10;
+            checksum += (char) ip1;
+            checksum += (char) ip2;
+            checksum += (char) ip3;
+            checksum += (char) ip4;
 
 
-            checksum+= (char)touchedPoint.x / 256;
-            checksum+= (char)touchedPoint.x % 256;
+            checksum += (char) touchedPoint.x / 256;
+            checksum += (char) touchedPoint.x % 256;
 
-            checksum+= (char)touchedPoint.y / 256;
-            checksum+= (char)touchedPoint.y % 256;
+            checksum += (char) touchedPoint.y / 256;
+            checksum += (char) touchedPoint.y % 256;
 
-            outputBuffer+=(char)checksum%256;
+            outputBuffer += (char) checksum % 256;
             //checksum
 
             serialPort.Write(outputBuffer);
@@ -501,11 +501,12 @@ int main(int argc, char *argv[]) {
 
         if (!isDataStarted) {
             startPosition = allReadData.find(startChar);
-            if(startPosition >= 0 && allReadData.size() >= 4 && allReadData[startPosition+1]==secondStartChar && allReadData[startPosition+2]==(char)18){
+            if (startPosition >= 0 && allReadData.size() >= 4 && allReadData[startPosition + 1] == secondStartChar &&
+                allReadData[startPosition + 2] == (char) 18) {
 
                 isDataStarted = true;
                 startPosition = -1;
-                serialLength=allReadData[3];
+                serialLength = allReadData[3];
 
                 allReadData = allReadData.substr(startPosition + 5, allReadData.length());
 
@@ -527,24 +528,24 @@ int main(int argc, char *argv[]) {
                 //horizental angle 1 byte
                 //zoom 1 byte
 
-                    radar_angle = allReadData[0] * 256 + allReadData[1];
+                radar_angle = allReadData[0] * 256 + allReadData[1];
 
-                    //   cout << "Processed data: " << allReadData << endl;
+                //   cout << "Processed data: " << allReadData << endl;
 
-                    view_angle = (int) allReadData[2] - 100;
-                    vertical_angle = (int) allReadData[3];
-                    horizental_angle = (int) allReadData[4];
-                    zoom = (int) allReadData[5] / 10;
+                view_angle = (int) allReadData[2] - 100;
+                vertical_angle = (int) allReadData[3];
+                horizental_angle = (int) allReadData[4];
+                zoom = (int) allReadData[5] / 10;
 
 
-                    setVideoCaptureAddressByIP(
-                            to_string(allReadData[6]) + '.' +
-                            to_string(allReadData[7]) + '.' +
-                            to_string(allReadData[8]) + '.' +
-                            to_string(allReadData[9]));
+                setVideoCaptureAddressByIP(
+                        to_string(allReadData[6]) + '.' +
+                        to_string(allReadData[7]) + '.' +
+                        to_string(allReadData[8]) + '.' +
+                        to_string(allReadData[9]));
 
-                    if (zoom < 1)
-                        zoom = 1;
+                if (zoom < 1)
+                    zoom = 1;
 
 //                    cout<<"radar angle: "<<radar_angle<<endl;
 //                    cout<<"vertical angle: "<<vertical_angle<<endl;
@@ -560,7 +561,7 @@ int main(int argc, char *argv[]) {
                 isDataStarted = false;
 
                 // flush
-                allReadData=allReadData.substr(serialLength,allReadData.size());
+                allReadData = allReadData.substr(serialLength, allReadData.size());
             } else {
 //                cout << "waiting for data to be finished.. remaining byte: "<<serialLength-allReadData.size() << endl;
             }
@@ -571,8 +572,9 @@ int main(int argc, char *argv[]) {
 //        }
 
 
-        if(frameCount>=30) {
-            cout << "frame id: "<<painted_frame_id<< " Read FPS: " << frameCount / ((nowTime - lastTime) / 1000.0) << " ";
+        if (frameCount >= 30) {
+            cout << "frame id: " << painted_frame_id << " Read FPS: " << frameCount / ((nowTime - lastTime) / 1000.0)
+                 << " ";
 
             lastTime = nowTime;
             frameCount = 0;
