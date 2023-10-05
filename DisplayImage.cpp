@@ -23,8 +23,7 @@ int radar_angle = -100, radar_size_of_angle = 20;
 int view_angle = -100, view_size_of_angle = 20;
 int horizental_angle = 60, vertical_angle = 60;
 double zoom = 1;
-
-SerialPort serialPort;
+string serialPortAddress="";
 
 
 const vector<string> explode(const string &s, const char &c) {
@@ -132,7 +131,7 @@ void setVideoCaptureAddressByIP(string ip) {
     cout << "IP Address of video capture: " << ip << endl;
     if (ip == "192.168.1.90" || ip == "192.168.1.110") {
         string first = "rtspsrc location=rtsp://admin:Admin1401@";
-        string second = ":554/streaming/channels/101 latency=10 is-live=true drop-on-latency=1 tcp-timeout=1000 teardown-timeout=1000 timeout=1000 ! rtph264depay ! h264parse ! decodebin ! autovideoconvert ! video/x-raw,format=BGRx ! videoconvert ! video/x-raw,format=BGR ! appsink drop=true sync=false";
+        string second = ":554/streaming/channels/101 latency=200 is-live=true drop-on-latency=1 tcp-timeout=1000 teardown-timeout=1000 timeout=1000 ! rtph264depay ! h264parse ! decodebin ! autovideoconvert ! video/x-raw,format=BGRx ! videoconvert ! video/x-raw,format=BGR ! appsink drop=true sync=false";
         auto tmp = first + ip + second;
         auto ipTmp = explode(ip, '.');
         ip1 = stoi(ipTmp[0]);
@@ -148,12 +147,25 @@ void setVideoCaptureAddressByIP(string ip) {
 
 
 void sendAndReceiveDataFromToThread() {
+    return;
+    // Create serial port object and open serial port at 57600 buad, 8 data bits, no parity bit, one stop bit (8n1),
+    // and no flow control
+    SerialPort serialPort = SerialPort(serialPortAddress, BaudRate::B_115200, NumDataBits::EIGHT, Parity::NONE, NumStopBits::ONE);
+    // Use SerialPort serialPort("/dev/ttyACM0", 13000); instead if you want to provide a custom baud rate
+    serialPort.SetTimeout(1); // Block for up to 0ms to receive data
+    serialPort.Open();
+    cout << "Serial port is opened" << endl;
 
+
+    // WARNING: If using the Arduino Uno or similar, you may want to delay here, as opening the serial port causes
+    // the micro to reset!
+
+    // Read some data back (will block for up to 100ms due to the SetTimeout(100) call above)
     string readData, allReadData = "";
     char startChar = char(255), secondStartChar = char(254);
     bool isDataStarted = false;
     int startPosition = -1, serialLength = 0;
-    
+
     while (true) {
         readData.clear();
         serialPort.Read(readData);
@@ -213,14 +225,14 @@ void sendAndReceiveDataFromToThread() {
 
         allReadData.append(readData);
 
-        cout << "ALIVE " << endl;
+//        cout << "ALIVE " << endl;
 
         startPosition = allReadData.find(startChar);
-
-
-        cout << "START:" << (int) startPosition << endl;
-        cout << "SIZE:" << (int) allReadData.size() << endl;
-
+//
+//
+//        cout << "START:" << (int) startPosition << endl;
+//        cout << "SIZE:" << (int) allReadData.size() << endl;
+//
 
         if (startPosition >= 0 && allReadData.size() >= 15 &&
             allReadData[startPosition + 1] == (char) 254 &&
@@ -261,14 +273,14 @@ void sendAndReceiveDataFromToThread() {
 
                 allReadData.erase(0, startPosition + 15);
 
-                cout << "REMOVE1" << endl;
+//                cout << "REMOVE1" << endl;
             }
 
         } else {
             if (allReadData.size() > 1) {
                 allReadData.erase(0, startPosition + 1);
 
-                cout << "REMOVE2" << endl;
+//                cout << "REMOVE2" << endl;
             }
         }
 
@@ -283,7 +295,8 @@ void sendAndReceiveDataFromToThread() {
 
 void writeFrameToVideoWriter() {
 
-    return;
+    string filename="output.mp4";
+    videoWriterAddress="appsrc ! video/x-raw, format=BGR ! queue ! videoconvert ! video/x-raw,format=NV12 ! autovideoconvert ! x265enc ! h265parse ! qtmux ! filesink location="+filename+" sync=false";
     while (!videoWriter.isOpened()) {
         if (!painted_frame.empty()) {
             int sourceWidth = originalFrame.cols;
@@ -324,6 +337,7 @@ long currentMS() {
 }
 
 void readFrameFromVideoCapture() {
+
     time_t now;
     tm *currentTime;
     char dateTimeChar[100];
@@ -568,9 +582,6 @@ void mouseCallback(int event, int x, int y, int flags, void *userdata) {
 
 int main(int argc, char *argv[]) {
 
-    double ratio = 1;
-
-
     if (argc != 5) {
 
         cout << "You should insert 4 args" << endl
@@ -578,9 +589,9 @@ int main(int argc, char *argv[]) {
              << "2) Serial port address (like: /dev/ttyTHS1 or /dev/ttyS0 or etc)" << endl
              << "3) Video display width in pixel - this number should be less than webcam width (like 1920 or 1080 or 756 or etc)"
              << endl
-             << "4) Video output file (GStreamer pipeline) " << endl
+             << "4) Video output file (for example: output.mp4) " << endl
              << "For example:" << endl
-             << "./DisplayImage 192.168.1.100 /dev/ttyTHS2 1920 GSTREAMER_PIPELINE" << endl;;
+             << "./DisplayImage 192.168.1.100 /dev/ttyTHS2 1920 filename.mp4" << endl;;
         return 1;
     }
 
@@ -590,19 +601,7 @@ int main(int argc, char *argv[]) {
 
     splashScreen = imread("splash.png");
 
-    // Create serial port object and open serial port at 57600 buad, 8 data bits, no parity bit, one stop bit (8n1),
-    // and no flow control
-    serialPort = SerialPort(argv[2], BaudRate::B_115200, NumDataBits::EIGHT, Parity::NONE, NumStopBits::ONE);
-    // Use SerialPort serialPort("/dev/ttyACM0", 13000); instead if you want to provide a custom baud rate
-    serialPort.SetTimeout(1); // Block for up to 0ms to receive data
-    serialPort.Open();
-    cout << "Serial port is opened" << endl;
-
-
-    // WARNING: If using the Arduino Uno or similar, you may want to delay here, as opening the serial port causes
-    // the micro to reset!
-
-    // Read some data back (will block for up to 100ms due to the SetTimeout(100) call above)
+    serialPortAddress=argv[2];
 
 
     namedWindow(" ", WINDOW_NORMAL);
@@ -625,11 +624,8 @@ int main(int argc, char *argv[]) {
     showFrameToVideoOutput();
 
 
-
     writerVideoThread.join();
     readFrameFromVideoCaptureThread.join();
-    // Close the serial port
-    serialPort.Close();
     videoCapture.release();
     videoWriter.release();
     return 0;
