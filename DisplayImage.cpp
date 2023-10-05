@@ -14,6 +14,15 @@ using namespace mn::CppLinuxSerial;
 
 #define PI 3.14159265
 
+SerialPort serialPort;
+
+int ip1 = 0, ip2 = 0, ip3 = 0, ip4 = 0;
+
+int radar_angle = -100, radar_size_of_angle = 20;
+int view_angle = -100, view_size_of_angle = 20;
+int horizental_angle = 60, vertical_angle = 60;
+double zoom = 1;
+
 
 void shutdown() {
     system("shutdown -h now");
@@ -80,6 +89,7 @@ int pressed_key = 10;
 Point touchedPoint(0, 0);
 int touchId = 0;
 int lastTouchReported = 0;
+string outputBuffer;
 
 void openVideoCapture(bool force = false) {
     while (!videoCapture.isOpened() || force) {
@@ -95,12 +105,16 @@ void openVideoCapture(bool force = false) {
 }
 
 void setVideoCaptureAddressByIP(string ip) {
-    string first = "rtspsrc location=rtsp://admin:Admin1401@";
-    string second = ":554/streaming/channels/101 latency=10 is-live=true drop-on-latency=1 tcp-timeout=1000 teardown-timeout=1000 timeout=1000 ! rtph264depay ! h264parse ! decodebin ! autovideoconvert ! video/x-raw,format=BGRx ! videoconvert ! video/x-raw,format=BGR ! appsink drop=true sync=false";
-    auto tmp = first + ip + second;
-    if (tmp != videoCaptureAddress) {
-        videoCapture.release();
-        videoCaptureAddress = tmp;
+
+    if (ip == "192.168.1.90" || ip == "192.168.1.110")
+    {
+    	string first = "rtspsrc location=rtsp://admin:Admin1401@";
+    	string second = ":554/streaming/channels/101 latency=10 is-live=true drop-on-latency=1 tcp-timeout=1000 teardown-timeout=1000 timeout=1000 ! rtph264depay ! h264parse ! decodebin ! autovideoconvert ! video/x-raw,format=BGRx ! videoconvert ! video/x-raw,format=BGR ! appsink drop=true sync=false";
+    	auto tmp = first + ip + second;
+    	if (tmp != videoCaptureAddress) {
+       		videoCapture.release();
+        	videoCaptureAddress = tmp;
+    	}
     }
 }
 
@@ -115,6 +129,156 @@ void writeFrameToVideoWriter() {
         }
     }
 }
+
+
+void sendAndReceiveDataFromToThread(){
+
+    string readData,allReadData="";
+    char startChar = char(255), secondStartChar = char(254);
+    bool isDataStarted = false;
+    int startPosition = -1, serialLength = 0;
+
+    while(true)
+    {
+        readData.clear();
+        serialPort.Read(readData);
+
+        if (lastTouchReported != touchId || frame_id % 10 == 0) {
+            outputBuffer = "";
+            int checksum = 0;
+            //start flags
+            outputBuffer += (char) 255;
+            outputBuffer += (char) 254;
+            //lenght of packets
+            outputBuffer += (char) 18;
+            outputBuffer += (char) 15;
+
+            outputBuffer += (char) radar_angle / 256;
+            outputBuffer += (char) radar_angle % 256;
+            outputBuffer += (char) view_angle + 100;
+            outputBuffer += (char) vertical_angle;
+            outputBuffer += (char) horizental_angle;
+            outputBuffer += (char) zoom * 10;
+            outputBuffer += (char) ip1;
+            outputBuffer += (char) ip2;
+            outputBuffer += (char) ip3;
+            outputBuffer += (char) ip4;
+
+            outputBuffer += (char) touchedPoint.x / 256;
+            outputBuffer += (char) touchedPoint.x % 256;
+
+            outputBuffer += (char) touchedPoint.y / 256;
+            outputBuffer += (char) touchedPoint.y % 256;
+
+            checksum += (char) radar_angle / 256;
+            checksum += (char) radar_angle % 256;
+            checksum += (char) view_angle + 100;
+            checksum += (char) vertical_angle;
+            checksum += (char) horizental_angle;
+            checksum += (char) zoom * 10;
+            checksum += (char) ip1;
+            checksum += (char) ip2;
+            checksum += (char) ip3;
+            checksum += (char) ip4;
+
+
+            checksum += (char) touchedPoint.x / 256;
+            checksum += (char) touchedPoint.x % 256;
+
+            checksum += (char) touchedPoint.y / 256;
+            checksum += (char) touchedPoint.y % 256;
+
+            outputBuffer += (char) checksum % 256;
+            //checksum
+
+            serialPort.Write(outputBuffer);
+
+            lastTouchReported = touchId;
+        }
+
+        allReadData.append(readData);
+
+	cout << "ALIVE " << endl;
+
+	startPosition = allReadData.find(startChar);
+
+
+	cout << "START:" << (int)startPosition << endl;
+	cout << "SIZE:" << (int)allReadData.size() << endl;
+
+	cout << "HEADER:" <<  " " +
+
+		to_string(allReadData[startPosition + 0]) + " " +
+		to_string(allReadData[startPosition + 1]) + " " +
+		to_string(allReadData[startPosition + 2]) + " " +
+		to_string(allReadData[startPosition + 3]) + " " << endl;
+
+
+
+	if (startPosition >= 0 && allReadData.size() >= 15 		&&
+		allReadData[startPosition + 1] == (char) 254		&&
+                allReadData[startPosition + 2] == (char) 18 		&&
+		allReadData[startPosition + 3] == (char) 11) {
+
+		if (allReadData.size() > 15) {
+
+	                radar_angle = allReadData[startPosition + 4] * 256 + allReadData[startPosition + 5];
+
+	                view_angle = (int) allReadData[startPosition + 6] - 100;
+
+	                vertical_angle = (int) allReadData[startPosition + 7];
+
+	                horizental_angle = (int) allReadData[startPosition + 8];
+
+	                zoom = (int) allReadData[startPosition + 9] / 10;
+
+
+	                setVideoCaptureAddressByIP(
+	                        to_string(allReadData[startPosition + 10]) + '.' +
+	                        to_string(allReadData[startPosition + 11]) + '.' +
+	                        to_string(allReadData[startPosition + 12]) + '.' +
+	                        to_string(allReadData[startPosition + 13]));
+
+
+
+                    cout<<"AZIMUTH ENCODER: " << radar_angle << endl;
+                    cout<<"ELEVATION ENCODER: " << view_angle << endl;
+                    cout<<"AZIMUTH RETICLE RANGE: " << vertical_angle << endl;
+                    cout<<"ELEVATION RETICLE RANGE: " << horizental_angle << endl;
+                    cout<<"ZOOM: " << zoom << endl;
+
+                    cout<<"IP: " << to_string(allReadData[startPosition + 10]) + '.' +
+	                        to_string(allReadData[startPosition + 11]) + '.' +
+	                        to_string(allReadData[startPosition + 12]) + '.' +
+	                        to_string(allReadData[startPosition + 13]) << endl;
+
+
+			allReadData.erase(0, startPosition + 15);
+
+			cout << "REMOVE1" << endl;
+		}
+
+	}
+	else
+	{
+		if (allReadData.size() > 1) {
+			allReadData.erase(0, startPosition + 1);
+
+			cout << "REMOVE2" << endl;
+		}
+	}
+
+	if (allReadData.size() > 100)
+	{
+		this_thread::sleep_for(chrono::milliseconds(10));
+	}
+	else
+	{
+        	this_thread::sleep_for(chrono::milliseconds(100));
+	}
+    }
+}
+
 
 long currentMS()
 {
@@ -161,6 +325,9 @@ void mouseCallback(int event, int x, int y, int flags, void *userdata) {
 
 
 int main(int argc, char *argv[]) {
+
+    double ratio = 1;	
+
     if (argc != 5) {
 
         cout << "You should insert 4 args" << endl
@@ -182,7 +349,7 @@ int main(int argc, char *argv[]) {
 
     // Create serial port object and open serial port at 57600 buad, 8 data bits, no parity bit, one stop bit (8n1),
     // and no flow control
-    SerialPort serialPort(argv[2], BaudRate::B_115200, NumDataBits::EIGHT, Parity::NONE, NumStopBits::ONE);
+    serialPort = SerialPort(argv[2], BaudRate::B_115200, NumDataBits::EIGHT, Parity::NONE, NumStopBits::ONE);
     // Use SerialPort serialPort("/dev/ttyACM0", 13000); instead if you want to provide a custom baud rate
     serialPort.SetTimeout(1); // Block for up to 0ms to receive data
     serialPort.Open();
@@ -197,10 +364,6 @@ int main(int argc, char *argv[]) {
     bool isDataStarted = false;
     int startPosition = -1, endPosition = -1;
 
-    int radar_angle = -100, radar_size_of_angle = 20;
-    int view_angle = -100, view_size_of_angle = 20;
-    int horizental_angle = 60, vertical_angle = 60;
-    double zoom = 1, ratio = 1;
 
     namedWindow(" ", WINDOW_NORMAL);
     //For use opengl
@@ -216,7 +379,7 @@ int main(int argc, char *argv[]) {
     cout << "splash screen read" << endl;
 
     thread showVideoThread(showFrameToVideoOutput);
-
+    thread serialThread(sendAndReceiveDataFromToThread);
 
     openVideoCapture();
 
@@ -414,85 +577,12 @@ int main(int argc, char *argv[]) {
 
 
         pressed_key = waitKey(1);
-        readData.clear();
-        //serialPort.Read(readData);
-
-        if (lastTouchReported != touchId) {
-//            serialPort.Write("touched:");
-//            serialPort.Write(to_string(touchedPoint.x));
-//            serialPort.Write(",");
-//            serialPort.Write(to_string(touchedPoint.y));
-//            serialPort.Write("\n");
-            lastTouchReported = touchId;
-        }
-
-        allReadData.append(readData);
-
-        if (!isDataStarted) {
-            startPosition = allReadData.find(startChar);
-            if (startPosition >= 0) {
-                allReadData = allReadData.substr(startPosition + 1, allReadData.length());
-                isDataStarted = true;
-                startPosition = -1;
-            }
-        } else {
-            endPosition = allReadData.find(endChar);
-
-            if (endPosition >= 0) {
-                allReadData = allReadData.substr(0, endPosition);
-
-                // process data in allReadData
-
-
-
-                //radar 2 byte
-                //view angle 1 byte
-                //vertical angle 1 byte
-                //horizental angle 1 byte
-                //zoom 1 byte
-                if (allReadData.length() == 10) {
-
-
-                    radar_angle = allReadData[0] * 256 + allReadData[1];
-
-                    //   cout << "Processed data: " << allReadData << endl;
-
-                    view_angle = (int) allReadData[2] - 100;
-                    vertical_angle = (int) allReadData[3];
-                    horizental_angle = (int) allReadData[4];
-                    zoom = (int) allReadData[5] / 10;
-
-
-                    setVideoCaptureAddressByIP(
-                            to_string(allReadData[6]) + '.' +
-                            to_string(allReadData[7]) + '.' +
-                            to_string(allReadData[8]) + '.' +
-                            to_string(allReadData[9]));
-
-                    if (zoom < 1)
-                        zoom = 1;
-                } else {
-                    cout << "Data size is not correct" << endl;
-                }
-
-                isDataStarted = false;
-                endPosition = -1;
-                // flush
-                allReadData.clear();
-            } else {
-                cout << "waiting for data to be finished" << endl;
-            }
-        }
-
-        if (!readData.empty()) {
-//	    for(int i=0; i< readData.length();i++){
-//		cout<< readData[i] << " | "<<(int)readData[i]<<endl;
-//	    }
-            //           cout << "Recieved data = \"" << readData << "\"" << endl;
-        }
+ 
 
         if (frame_id % 30 == 0) {
-            cout << " OPENCV FPS " << getTickFrequency() / (getTickCount() - tickCount) << endl;
+ 
+           cout << " OPENCV FPS " << getTickFrequency() / (getTickCount() - tickCount) << endl;
+
         }
 
 
