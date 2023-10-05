@@ -147,7 +147,7 @@ void setVideoCaptureAddressByIP(string ip) {
 
 
 void sendAndReceiveDataFromToThread() {
-    
+
     // Create serial port object and open serial port at 57600 buad, 8 data bits, no parity bit, one stop bit (8n1),
     // and no flow control
     SerialPort serialPort = SerialPort(serialPortAddress, BaudRate::B_115200, NumDataBits::EIGHT, Parity::NONE, NumStopBits::ONE);
@@ -178,7 +178,10 @@ void sendAndReceiveDataFromToThread() {
             outputBuffer += (char) 254;
             //lenght of packets
             outputBuffer += (char) 18;
+            outputBuffer += (char) 5;
+            outputBuffer += (char) 2;
             outputBuffer += (char) 15;
+
 
             outputBuffer += (char) radar_angle / 256;
             outputBuffer += (char) radar_angle % 256;
@@ -237,41 +240,60 @@ void sendAndReceiveDataFromToThread() {
         if (startPosition >= 0 && allReadData.size() >= 15 &&
             allReadData[startPosition + 1] == (char) 254 &&
             allReadData[startPosition + 2] == (char) 18 &&
-            allReadData[startPosition + 3] == (char) 11) {
+            allReadData[startPosition + 3] == (char) 5 &&
+            allReadData[startPosition + 4] == (char) 2 &&
+            allReadData[startPosition + 5] == (char) 11
+            ) {
 
-            if (allReadData.size() > 15) {
-
-                radar_angle = allReadData[startPosition + 4] * 256 + allReadData[startPosition + 5];
-
-                view_angle = (int) allReadData[startPosition + 6] - 100;
-
-                vertical_angle = (int) allReadData[startPosition + 7];
-
-                horizental_angle = (int) allReadData[startPosition + 8];
-
-                zoom = (int) allReadData[startPosition + 9] / 10;
+            if (allReadData.size() >= 17+startPosition) {
+                int startIndex=6;
 
 
-                setVideoCaptureAddressByIP(
-                        to_string(allReadData[startPosition + 10]) + '.' +
-                        to_string(allReadData[startPosition + 11]) + '.' +
-                        to_string(allReadData[startPosition + 12]) + '.' +
-                        to_string(allReadData[startPosition + 13]));
+                int checksum=0;
+                for(int i=startIndex; i<17;i++)
+                {
+                    checksum+=allReadData[i];
+                }
+
+                if(checksum%256 == allReadData[16]){
+                    cout<<"checksum is NOT OK !!!!!"<<endl;
+                }
+                else {
+
+                    radar_angle =
+                            allReadData[startPosition + startIndex] * 256 + allReadData[startPosition + startIndex + 1];
 
 
-                cout << "AZIMUTH ENCODER: " << radar_angle << endl;
-                cout << "ELEVATION ENCODER: " << view_angle << endl;
-                cout << "AZIMUTH RETICLE RANGE: " << vertical_angle << endl;
-                cout << "ELEVATION RETICLE RANGE: " << horizental_angle << endl;
-                cout << "ZOOM: " << zoom << endl;
+                    view_angle = (int) allReadData[startPosition + startIndex + 2] - 100;
 
-                cout << "IP: " << to_string(allReadData[startPosition + 10]) + '.' +
-                                  to_string(allReadData[startPosition + 11]) + '.' +
-                                  to_string(allReadData[startPosition + 12]) + '.' +
-                                  to_string(allReadData[startPosition + 13]) << endl;
+                    vertical_angle = (int) allReadData[startPosition + startIndex + 3];
+
+                    horizental_angle = (int) allReadData[startPosition + startIndex + 4];
+
+                    zoom = (int) allReadData[startPosition + startIndex + 5] / 10;
 
 
-                allReadData.erase(0, startPosition + 15);
+                    setVideoCaptureAddressByIP(
+                            to_string(allReadData[startPosition + startIndex + 6]) + '.' +
+                            to_string(allReadData[startPosition + startIndex + 7]) + '.' +
+                            to_string(allReadData[startPosition + startIndex + 8]) + '.' +
+                            to_string(allReadData[startPosition + startIndex + 9]));
+
+
+                    cout << "AZIMUTH ENCODER: " << radar_angle << endl;
+                    cout << "ELEVATION ENCODER: " << view_angle << endl;
+                    cout << "AZIMUTH RETICLE RANGE: " << vertical_angle << endl;
+                    cout << "ELEVATION RETICLE RANGE: " << horizental_angle << endl;
+                    cout << "ZOOM: " << zoom << endl;
+
+                    cout << "IP: " << to_string(allReadData[startPosition + startIndex + 6]) + '.' +
+                                      to_string(allReadData[startPosition + startIndex + 7]) + '.' +
+                                      to_string(allReadData[startPosition + startIndex + 8]) + '.' +
+                                      to_string(allReadData[startPosition + startIndex + 9]) << endl;
+
+
+                }
+                allReadData.erase(0, startPosition + 17);
 
 //                cout << "REMOVE1" << endl;
             }
