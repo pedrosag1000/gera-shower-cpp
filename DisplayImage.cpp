@@ -119,7 +119,6 @@ void openVideoCapture(bool force = false) {
         painted_frame = splashScreen;
         painted_frame_id++;
         cout.flush();
-        cout<<"wait for 1 sec";
         waitKey(1000);
         cout<<"Try to release camera";
         videoCapture.release();
