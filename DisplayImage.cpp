@@ -218,13 +218,15 @@ void sendAndReceiveDataFromToThread(){
         cout << "START:" << (int)startPosition << endl;
         cout << "SIZE:" << (int)allReadData.size() << endl;
 
-        cout << "HEADER:" <<  " " +
+        if(startPosition >= 0) {
+            cout << "HEADER:" << " " +
 
-                              to_string(allReadData[startPosition + 0]) + " " +
-                              to_string(allReadData[startPosition + 1]) + " " +
-                              to_string(allReadData[startPosition + 2]) + " " +
-                              to_string(allReadData[startPosition + 3]) + " " << endl;
+                                 to_string(allReadData[startPosition + 0]) + " " +
+                                 to_string(allReadData[startPosition + 1]) + " " +
+                                 to_string(allReadData[startPosition + 2]) + " " +
+                                 to_string(allReadData[startPosition + 3]) + " " << endl;
 
+        }
 
 
         if (startPosition >= 0 && allReadData.size() >= 15 		&&
@@ -379,6 +381,7 @@ void mouseCallback(int event, int x, int y, int flags, void *userdata) {
 int main(int argc, char *argv[]) {
 
     double ratio = 1;
+
 
     if (argc != 5) {
 
