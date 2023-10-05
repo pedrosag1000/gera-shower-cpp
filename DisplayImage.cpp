@@ -27,7 +27,6 @@ double zoom = 1;
 SerialPort serialPort;
 
 
-
 const vector<string> explode(const string &s, const char &c) {
     string buff{""};
     vector<string> v;
@@ -113,6 +112,7 @@ int lastTouchReported = 0;
 string outputBuffer;
 string videoWriterAddress;
 int display_width;
+
 void openVideoCapture(bool force = false) {
     while (!videoCapture.isOpened() || force) {
         cout << "Waiting for camera" << endl;
@@ -121,8 +121,8 @@ void openVideoCapture(bool force = false) {
         cout.flush();
         waitKey(1000);
         videoCapture.release();
-        if(!videoCaptureAddress.empty())
-        videoCapture = VideoCapture(videoCaptureAddress, CAP_GSTREAMER);
+        if (!videoCaptureAddress.empty())
+            videoCapture = VideoCapture(videoCaptureAddress, CAP_GSTREAMER);
         force = false;
     }
 }
@@ -147,15 +147,14 @@ void setVideoCaptureAddressByIP(string ip) {
 }
 
 
-void sendAndReceiveDataFromToThread(){
+void sendAndReceiveDataFromToThread() {
 
-    string readData,allReadData="";
+    string readData, allReadData = "";
     char startChar = char(255), secondStartChar = char(254);
     bool isDataStarted = false;
     int startPosition = -1, serialLength = 0;
-
-    while(true)
-    {
+    
+    while (true) {
         readData.clear();
         serialPort.Read(readData);
 
@@ -219,14 +218,13 @@ void sendAndReceiveDataFromToThread(){
         startPosition = allReadData.find(startChar);
 
 
-        cout << "START:" << (int)startPosition << endl;
-        cout << "SIZE:" << (int)allReadData.size() << endl;
+        cout << "START:" << (int) startPosition << endl;
+        cout << "SIZE:" << (int) allReadData.size() << endl;
 
 
-
-        if (startPosition >= 0 && allReadData.size() >= 15 		&&
-            allReadData[startPosition + 1] == (char) 254		&&
-            allReadData[startPosition + 2] == (char) 18 		&&
+        if (startPosition >= 0 && allReadData.size() >= 15 &&
+            allReadData[startPosition + 1] == (char) 254 &&
+            allReadData[startPosition + 2] == (char) 18 &&
             allReadData[startPosition + 3] == (char) 11) {
 
             if (allReadData.size() > 15) {
@@ -249,17 +247,16 @@ void sendAndReceiveDataFromToThread(){
                         to_string(allReadData[startPosition + 13]));
 
 
+                cout << "AZIMUTH ENCODER: " << radar_angle << endl;
+                cout << "ELEVATION ENCODER: " << view_angle << endl;
+                cout << "AZIMUTH RETICLE RANGE: " << vertical_angle << endl;
+                cout << "ELEVATION RETICLE RANGE: " << horizental_angle << endl;
+                cout << "ZOOM: " << zoom << endl;
 
-                cout<<"AZIMUTH ENCODER: " << radar_angle << endl;
-                cout<<"ELEVATION ENCODER: " << view_angle << endl;
-                cout<<"AZIMUTH RETICLE RANGE: " << vertical_angle << endl;
-                cout<<"ELEVATION RETICLE RANGE: " << horizental_angle << endl;
-                cout<<"ZOOM: " << zoom << endl;
-
-                cout<<"IP: " << to_string(allReadData[startPosition + 10]) + '.' +
-                                to_string(allReadData[startPosition + 11]) + '.' +
-                                to_string(allReadData[startPosition + 12]) + '.' +
-                                to_string(allReadData[startPosition + 13]) << endl;
+                cout << "IP: " << to_string(allReadData[startPosition + 10]) + '.' +
+                                  to_string(allReadData[startPosition + 11]) + '.' +
+                                  to_string(allReadData[startPosition + 12]) + '.' +
+                                  to_string(allReadData[startPosition + 13]) << endl;
 
 
                 allReadData.erase(0, startPosition + 15);
@@ -267,9 +264,7 @@ void sendAndReceiveDataFromToThread(){
                 cout << "REMOVE1" << endl;
             }
 
-        }
-        else
-        {
+        } else {
             if (allReadData.size() > 1) {
                 allReadData.erase(0, startPosition + 1);
 
@@ -277,45 +272,41 @@ void sendAndReceiveDataFromToThread(){
             }
         }
 
-        if (allReadData.size() > 100)
-        {
+        if (allReadData.size() > 100) {
             this_thread::sleep_for(chrono::milliseconds(10));
-        }
-        else
-        {
+        } else {
             this_thread::sleep_for(chrono::milliseconds(100));
         }
     }
 }
 
 
-
-
 void writeFrameToVideoWriter() {
 
-        while(!videoWriter.isOpened()){
-            if(!painted_frame.empty()){
-                int sourceWidth = originalFrame.cols;
-                int sourceHeight = originalFrame.rows;
-                int width = sourceWidth, height = sourceHeight;
+    return;
+    while (!videoWriter.isOpened()) {
+        if (!painted_frame.empty()) {
+            int sourceWidth = originalFrame.cols;
+            int sourceHeight = originalFrame.rows;
+            int width = sourceWidth, height = sourceHeight;
 
-                if (width > display_width) {
-                    int ratio = (double) display_width / sourceWidth;
+            if (width > display_width) {
+                int ratio = (double) display_width / sourceWidth;
 
-                    width = (int) (sourceWidth * ratio);
-                    height = (int) (sourceHeight * ratio);
-                }
+                width = (int) (sourceWidth * ratio);
+                height = (int) (sourceHeight * ratio);
+            }
 //                cout << "Video writer starting with "<<videoWriterAddress<< " : " << width << "x" << height << endl;
-                videoWriter.open(videoWriterAddress, CAP_GSTREAMER, 0, (double) 30, Size(width, height));
-                if(!videoWriter.isOpened())
-                    this_thread::sleep_for(chrono::milliseconds(1000));
-                else
+            videoWriter.open(videoWriterAddress, CAP_GSTREAMER, 0, (double) 30, Size(width, height));
+            if (!videoWriter.isOpened())
+                this_thread::sleep_for(chrono::milliseconds(1000));
+            else
                 cout << "Video writer started" << endl;
 
 
-            }
-
         }
+
+    }
     int lastFrameId = 0;
     while (pressed_key != 27) {
         if (lastFrameId != painted_frame_id) {
@@ -332,118 +323,12 @@ long currentMS() {
             std::chrono::system_clock::now().time_since_epoch()).count();
 }
 
-void showFrameToVideoOutput() {
-    int frameId = 0, frameCount = 0;
-
-    int delta = 0;
-
-
-    auto lastTime = currentMS();
-    auto nowTime = lastTime;
-    while (pressed_key != 27) {
-        try {
-            nowTime = currentMS();
-
-            delta = painted_frame_id - frameId;
-            if (delta != 0 || true) {
-                frameId += delta;
-                frameCount++;
-                if (!painted_frame.empty()) {
-                    try {
-                        imshow(" ", painted_frame);
-                    }
-                    catch (int e) {
-                        cout << "Error on showing image: " << e << endl;
-                    }
-                }
-            }
-
-            if (frameCount > 30) {
-                cout << "Show FPS: " << frameCount / ((nowTime - lastTime) / 1000.0) << " ";
-                frameCount = 0;
-                lastTime = nowTime;
-            }
-            this_thread::sleep_for(chrono::milliseconds(25));
-        }
-        catch (int e){
-            cout <<"exception 1!!!"<<e<<endl;
-        }
-
-    }
-}
-
-
-
-void mouseCallback(int event, int x, int y, int flags, void *userdata) {
-    if (event == EVENT_LBUTTONDOWN) {
-        touchedPoint = Point(x, y);
-        touchId++;
-        cout << "Left button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
-    }
-}
-
-
-int main(int argc, char *argv[]) {
-
-    double ratio = 1;
-
-
-    if (argc != 5) {
-
-        cout << "You should insert 4 args" << endl
-             << "1) Webcam IP (192.168.1.1 or etc)" << endl
-             << "2) Serial port address (like: /dev/ttyTHS1 or /dev/ttyS0 or etc)" << endl
-             << "3) Video display width in pixel - this number should be less than webcam width (like 1920 or 1080 or 756 or etc)"
-             << endl
-             << "4) Video output file (GStreamer pipeline) " << endl
-             << "For example:" << endl
-             << "./DisplayImage 192.168.1.100 /dev/ttyTHS2 1920 GSTREAMER_PIPELINE" << endl;;
-        return 1;
-    }
-
-    videoWriterAddress=argv[4];
-
-    display_width = stoi(argv[3]);
-
-    splashScreen = imread("splash.png");
-
-    // Create serial port object and open serial port at 57600 buad, 8 data bits, no parity bit, one stop bit (8n1),
-    // and no flow control
-    serialPort = SerialPort(argv[2], BaudRate::B_115200, NumDataBits::EIGHT, Parity::NONE, NumStopBits::ONE);
-    // Use SerialPort serialPort("/dev/ttyACM0", 13000); instead if you want to provide a custom baud rate
-    serialPort.SetTimeout(1); // Block for up to 0ms to receive data
-    serialPort.Open();
-    cout << "Serial port is opened" << endl;
-
-
-    // WARNING: If using the Arduino Uno or similar, you may want to delay here, as opening the serial port causes
-    // the micro to reset!
-
-    // Read some data back (will block for up to 100ms due to the SetTimeout(100) call above)
-
-
-    namedWindow(" ", WINDOW_NORMAL);
-    //For use opengl
-    //namedWindow(" ", WINDOW_OPENGL);
-    setMouseCallback(" ", mouseCallback, nullptr);
-    setWindowProperty(" ", WND_PROP_FULLSCREEN, WINDOW_FULLSCREEN);
-
-    setVideoCaptureAddressByIP(argv[1]);
-
-    cout << "Camera connection is opened" << endl;
-
-    cout << "splash screen read" << endl;
-
-    thread showVideoThread(showFrameToVideoOutput);
-    thread serialThread(sendAndReceiveDataFromToThread);
-    thread writerVideoThread(writeFrameToVideoWriter);
-
-
+void readFrameFromVideoCapture() {
     time_t now;
     tm *currentTime;
     char dateTimeChar[100];
 
-
+    double ratio = 1;
 
 
     auto lastTime = currentMS();
@@ -464,13 +349,13 @@ int main(int argc, char *argv[]) {
 
         do {
             openVideoCapture(originalFrame.empty());
-            videoCapture >> originalFrame;
+            videoCapture.read(originalFrame);
         } while (originalFrame.empty());
 
 
         int sourceWidth = originalFrame.cols;
         int sourceHeight = originalFrame.rows;
-        int width=sourceWidth,height=sourceHeight;
+        int width = sourceWidth, height = sourceHeight;
 
 
         if (width > display_width) {
@@ -617,7 +502,6 @@ int main(int argc, char *argv[]) {
         painted_frame_id = frame_id;
 
 
-        pressed_key = waitKey(25);
 
 
 //        if (frame_id % 30 == 0) {
@@ -634,8 +518,116 @@ int main(int argc, char *argv[]) {
         }
     }
 
+}
+
+void showFrameToVideoOutput() {
+    int frameId = 0, frameCount = 0;
+
+    int delta = 0;
+
+
+    auto lastTime = currentMS();
+    auto nowTime = lastTime;
+    while (pressed_key != 27) {
+
+        nowTime = currentMS();
+
+        delta = painted_frame_id - frameId;
+        if (delta != 0 || true) {
+            frameId += delta;
+            frameCount++;
+            if (!painted_frame.empty()) {
+                try {
+                    imshow(" ", painted_frame);
+                }
+                catch (int e) {
+                    cout << "Error on showing image: " << e << endl;
+                }
+            }
+        }
+
+        if (frameCount > 30) {
+            cout << "Show FPS: " << frameCount / ((nowTime - lastTime) / 1000.0) << " ";
+            frameCount = 0;
+            lastTime = nowTime;
+        }
+        pressed_key = waitKey(25);
+
+    }
+}
+
+
+void mouseCallback(int event, int x, int y, int flags, void *userdata) {
+    if (event == EVENT_LBUTTONDOWN) {
+        touchedPoint = Point(x, y);
+        touchId++;
+        cout << "Left button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
+    }
+}
+
+
+int main(int argc, char *argv[]) {
+
+    double ratio = 1;
+
+
+    if (argc != 5) {
+
+        cout << "You should insert 4 args" << endl
+             << "1) Webcam IP (192.168.1.1 or etc)" << endl
+             << "2) Serial port address (like: /dev/ttyTHS1 or /dev/ttyS0 or etc)" << endl
+             << "3) Video display width in pixel - this number should be less than webcam width (like 1920 or 1080 or 756 or etc)"
+             << endl
+             << "4) Video output file (GStreamer pipeline) " << endl
+             << "For example:" << endl
+             << "./DisplayImage 192.168.1.100 /dev/ttyTHS2 1920 GSTREAMER_PIPELINE" << endl;;
+        return 1;
+    }
+
+    videoWriterAddress = argv[4];
+
+    display_width = stoi(argv[3]);
+
+    splashScreen = imread("splash.png");
+
+    // Create serial port object and open serial port at 57600 buad, 8 data bits, no parity bit, one stop bit (8n1),
+    // and no flow control
+    serialPort = SerialPort(argv[2], BaudRate::B_115200, NumDataBits::EIGHT, Parity::NONE, NumStopBits::ONE);
+    // Use SerialPort serialPort("/dev/ttyACM0", 13000); instead if you want to provide a custom baud rate
+    serialPort.SetTimeout(1); // Block for up to 0ms to receive data
+    serialPort.Open();
+    cout << "Serial port is opened" << endl;
+
+
+    // WARNING: If using the Arduino Uno or similar, you may want to delay here, as opening the serial port causes
+    // the micro to reset!
+
+    // Read some data back (will block for up to 100ms due to the SetTimeout(100) call above)
+
+
+    namedWindow(" ", WINDOW_NORMAL);
+    //For use opengl
+    //namedWindow(" ", WINDOW_OPENGL);
+    setMouseCallback(" ", mouseCallback, nullptr);
+    setWindowProperty(" ", WND_PROP_FULLSCREEN, WINDOW_FULLSCREEN);
+
+    setVideoCaptureAddressByIP(argv[1]);
+
+    cout << "Camera connection is opened" << endl;
+
+    cout << "splash screen read" << endl;
+
+    thread readFrameFromVideoCaptureThread(readFrameFromVideoCapture);
+    thread serialThread(sendAndReceiveDataFromToThread);
+    thread writerVideoThread(writeFrameToVideoWriter);
+
+
+    showFrameToVideoOutput();
+
+
+
     writerVideoThread.join();
-    showVideoThread.join();
+    readFrameFromVideoCaptureThread.join();
     // Close the serial port
     serialPort.Close();
     videoCapture.release();
