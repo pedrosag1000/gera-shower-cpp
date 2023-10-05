@@ -167,7 +167,7 @@ void sendAndReceiveDataFromToThread() {
     bool isDataStarted = false;
     int startPosition = -1, serialLength = 0;
 
-    while (true) {
+    while (pressed_key!=27) {
         readData.clear();
         serialPort.Read(readData);
 
@@ -305,6 +305,7 @@ void sendAndReceiveDataFromToThread() {
             this_thread::sleep_for(chrono::milliseconds(100));
         }
     }
+    serialPort.Close();
 }
 
 
