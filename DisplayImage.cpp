@@ -6,6 +6,8 @@
 #include <thread>
 #include<stdlib.h>
 
+#include <signal.h>
+
 using namespace cv;
 
 using namespace std;
@@ -23,6 +25,13 @@ int horizental_angle = 60, vertical_angle = 60;
 double zoom = 1;
 
 SerialPort serialPort;
+
+
+void segfault_sigaction(int signal, siginfo_t *si, void *arg)
+{
+    printf("Caught segfault at address %p\n", si->si_addr);
+    exit(0);
+}
 
 const vector<string> explode(const string &s, const char &c) {
     string buff{""};
@@ -367,6 +376,7 @@ void showFrameToVideoOutput() {
 
     }
 }
+
 
 
 void mouseCallback(int event, int x, int y, int flags, void *userdata) {
