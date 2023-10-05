@@ -23,7 +23,7 @@ int radar_angle = -100, radar_size_of_angle = 20;
 int view_angle = -100, view_size_of_angle = 20;
 int horizental_angle = 60, vertical_angle = 60;
 double zoom = 1;
-string serialPortAddress="";
+string serialPortAddress = "";
 
 
 const vector<string> explode(const string &s, const char &c) {
@@ -150,7 +150,8 @@ void sendAndReceiveDataFromToThread() {
 
     // Create serial port object and open serial port at 57600 buad, 8 data bits, no parity bit, one stop bit (8n1),
     // and no flow control
-    SerialPort serialPort = SerialPort(serialPortAddress, BaudRate::B_115200, NumDataBits::EIGHT, Parity::NONE, NumStopBits::ONE);
+    SerialPort serialPort = SerialPort(serialPortAddress, BaudRate::B_115200, NumDataBits::EIGHT, Parity::NONE,
+                                       NumStopBits::ONE);
     // Use SerialPort serialPort("/dev/ttyACM0", 13000); instead if you want to provide a custom baud rate
     serialPort.SetTimeout(1); // Block for up to 0ms to receive data
     serialPort.Open();
@@ -237,72 +238,64 @@ void sendAndReceiveDataFromToThread() {
 //        cout << "SIZE:" << (int) allReadData.size() << endl;
 //
 
-        if (startPosition >= 0 && allReadData.size() >= 15 &&
+        if (startPosition >= 0 && allReadData.size() >= startPosition + 17 &&
             allReadData[startPosition + 1] == (char) 254 &&
             allReadData[startPosition + 2] == (char) 18 &&
             allReadData[startPosition + 3] == (char) 5 &&
             allReadData[startPosition + 4] == (char) 2 &&
-            allReadData[startPosition + 5] == (char) 11
-            ) {
-
-            if (allReadData.size() >= 17+startPosition) {
-                int startIndex=6;
+            allReadData[startPosition + 5] == (char) 11) {
 
 
-                int checksum=0;
-                for(int i=startIndex; i<17;i++)
-                {
-                    checksum+=allReadData[i];
-                }
-
-                if(checksum%256 == allReadData[16]){
-                    cout<<"checksum is NOT OK !!!!!"<<endl;
-                }
-                else {
-
-                    radar_angle =
-                            allReadData[startPosition + startIndex] * 256 + allReadData[startPosition + startIndex + 1];
+            int startIndex = 6;
 
 
-                    view_angle = (int) allReadData[startPosition + startIndex + 2] - 100;
-
-                    vertical_angle = (int) allReadData[startPosition + startIndex + 3];
-
-                    horizental_angle = (int) allReadData[startPosition + startIndex + 4];
-
-                    zoom = (int) allReadData[startPosition + startIndex + 5] / 10;
-
-
-                    setVideoCaptureAddressByIP(
-                            to_string(allReadData[startPosition + startIndex + 6]) + '.' +
-                            to_string(allReadData[startPosition + startIndex + 7]) + '.' +
-                            to_string(allReadData[startPosition + startIndex + 8]) + '.' +
-                            to_string(allReadData[startPosition + startIndex + 9]));
-
-
-                    cout << "AZIMUTH ENCODER: " << radar_angle << endl;
-                    cout << "ELEVATION ENCODER: " << view_angle << endl;
-                    cout << "AZIMUTH RETICLE RANGE: " << vertical_angle << endl;
-                    cout << "ELEVATION RETICLE RANGE: " << horizental_angle << endl;
-                    cout << "ZOOM: " << zoom << endl;
-
-                    cout << "IP: " << to_string(allReadData[startPosition + startIndex + 6]) + '.' +
-                                      to_string(allReadData[startPosition + startIndex + 7]) + '.' +
-                                      to_string(allReadData[startPosition + startIndex + 8]) + '.' +
-                                      to_string(allReadData[startPosition + startIndex + 9]) << endl;
-
-
-                }
-                allReadData.erase(0, startPosition + 17);
-
-//                cout << "REMOVE1" << endl;
+            int checksum = 0;
+            for (int i = startIndex; i < 17; i++) {
+                checksum += allReadData[i];
             }
+
+            if (checksum % 256 == allReadData[16]) {
+                cout << "checksum is NOT OK !!!!!" << endl;
+            } else {
+
+                radar_angle =
+                        allReadData[startPosition + startIndex] * 256 + allReadData[startPosition + startIndex + 1];
+
+
+                view_angle = (int) allReadData[startPosition + startIndex + 2] - 100;
+
+                vertical_angle = (int) allReadData[startPosition + startIndex + 3];
+
+                horizental_angle = (int) allReadData[startPosition + startIndex + 4];
+
+                zoom = (int) allReadData[startPosition + startIndex + 5] / 10;
+
+
+                setVideoCaptureAddressByIP(
+                        to_string(allReadData[startPosition + startIndex + 6]) + '.' +
+                        to_string(allReadData[startPosition + startIndex + 7]) + '.' +
+                        to_string(allReadData[startPosition + startIndex + 8]) + '.' +
+                        to_string(allReadData[startPosition + startIndex + 9]));
+
+
+                cout << "AZIMUTH ENCODER: " << radar_angle << endl;
+                cout << "ELEVATION ENCODER: " << view_angle << endl;
+                cout << "AZIMUTH RETICLE RANGE: " << vertical_angle << endl;
+                cout << "ELEVATION RETICLE RANGE: " << horizental_angle << endl;
+                cout << "ZOOM: " << zoom << endl;
+
+                cout << "IP: " << to_string(allReadData[startPosition + startIndex + 6]) + '.' +
+                                  to_string(allReadData[startPosition + startIndex + 7]) + '.' +
+                                  to_string(allReadData[startPosition + startIndex + 8]) + '.' +
+                                  to_string(allReadData[startPosition + startIndex + 9]) << endl;
+
+
+            }
+            allReadData.erase(0, startPosition + 17);
 
         } else {
             if (allReadData.size() > 1) {
                 allReadData.erase(0, startPosition + 1);
-
-//                cout << "REMOVE2" << endl;
             }
         }
 
@@ -317,8 +310,10 @@ void sendAndReceiveDataFromToThread() {
 
 void writeFrameToVideoWriter() {
 
-    string filename="output.mp4";
-    videoWriterAddress="appsrc ! video/x-raw, format=BGR ! queue ! videoconvert ! video/x-raw,format=NV12 ! autovideoconvert ! x265enc ! h265parse ! qtmux ! filesink location="+filename+" sync=false";
+    string filename = "output.mp4";
+    videoWriterAddress =
+            "appsrc ! video/x-raw, format=BGR ! queue ! videoconvert ! video/x-raw,format=NV12 ! autovideoconvert ! x265enc ! h265parse ! qtmux ! filesink location=" +
+            filename + " sync=false";
     while (!videoWriter.isOpened()) {
         if (!painted_frame.empty()) {
             int sourceWidth = originalFrame.cols;
@@ -623,7 +618,7 @@ int main(int argc, char *argv[]) {
 
     splashScreen = imread("splash.png");
 
-    serialPortAddress=argv[2];
+    serialPortAddress = argv[2];
 
 
     namedWindow(" ", WINDOW_NORMAL);
