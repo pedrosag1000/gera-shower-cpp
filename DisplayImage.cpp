@@ -344,7 +344,12 @@ void showFrameToVideoOutput() {
             frameId += delta;
             frameCount++;
             if(!painted_frame.empty()){
-                imshow(" ", painted_frame);
+                try {
+                    imshow(" ", painted_frame);
+                }
+                catch (int e){
+                    cout<<"Error on showing image: "<<e<<endl;
+                }
             }
         }
 
