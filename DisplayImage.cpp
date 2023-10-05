@@ -147,7 +147,7 @@ void setVideoCaptureAddressByIP(string ip) {
 
 
 void sendAndReceiveDataFromToThread() {
-    return;
+    
     // Create serial port object and open serial port at 57600 buad, 8 data bits, no parity bit, one stop bit (8n1),
     // and no flow control
     SerialPort serialPort = SerialPort(serialPortAddress, BaudRate::B_115200, NumDataBits::EIGHT, Parity::NONE, NumStopBits::ONE);
