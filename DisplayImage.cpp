@@ -218,15 +218,6 @@ void sendAndReceiveDataFromToThread(){
         cout << "START:" << (int)startPosition << endl;
         cout << "SIZE:" << (int)allReadData.size() << endl;
 
-        if(startPosition >= 0) {
-            cout << "HEADER:" << " " +
-
-                                 to_string(allReadData[startPosition + 0]) + " " +
-                                 to_string(allReadData[startPosition + 1]) + " " +
-                                 to_string(allReadData[startPosition + 2]) + " " +
-                                 to_string(allReadData[startPosition + 3]) + " " << endl;
-
-        }
 
 
         if (startPosition >= 0 && allReadData.size() >= 15 		&&
