@@ -337,29 +337,33 @@ void showFrameToVideoOutput() {
     auto lastTime = currentMS();
     auto nowTime = lastTime;
     while (pressed_key != 27) {
-        nowTime = currentMS();
+        try {
+            nowTime = currentMS();
 
-        delta = painted_frame_id - frameId;
-        if (delta != 0 || true) {
-            frameId += delta;
-            frameCount++;
-            if(!painted_frame.empty()){
-                try {
-                    imshow(" ", painted_frame);
-                }
-                catch (int e){
-                    cout<<"Error on showing image: "<<e<<endl;
+            delta = painted_frame_id - frameId;
+            if (delta != 0 || true) {
+                frameId += delta;
+                frameCount++;
+                if (!painted_frame.empty()) {
+                    try {
+                        imshow(" ", painted_frame);
+                    }
+                    catch (int e) {
+                        cout << "Error on showing image: " << e << endl;
+                    }
                 }
             }
-        }
 
-        if (frameCount > 30) {
-            cout << "Show FPS: " << frameCount / ((nowTime - lastTime) / 1000.0) << " ";
-            frameCount = 0;
-            lastTime = nowTime;
+            if (frameCount > 30) {
+                cout << "Show FPS: " << frameCount / ((nowTime - lastTime) / 1000.0) << " ";
+                frameCount = 0;
+                lastTime = nowTime;
+            }
+            this_thread::sleep_for(chrono::milliseconds(25));
         }
-        this_thread::sleep_for(chrono::milliseconds(25));
-
+        catch (int e){
+            cout <<"exception 1!!!"<<e<<endl;
+        }
 
     }
 }
