@@ -283,6 +283,7 @@ void sendAndReceiveDataFromToThread(){
             }
         }
 
+        cout<<"end of serial"<<endl;
         if (allReadData.size() > 100)
         {
             this_thread::sleep_for(chrono::milliseconds(10));
@@ -358,8 +359,8 @@ void showFrameToVideoOutput() {
                     try {
                         imshow(" ", painted_frame);
                     }
-                    catch (int e) {
-                        cout << "Error on showing image: " << e << endl;
+                    catch (exception exception) {
+                        cout << "Error on showing image: " << exception.what() << endl;
                     }
                 }
             }
@@ -371,8 +372,8 @@ void showFrameToVideoOutput() {
             }
             this_thread::sleep_for(chrono::milliseconds(25));
         }
-        catch (int e){
-            cout <<"exception 1!!!"<<e<<endl;
+        catch (exception exception){
+            cout <<"exception 1!!!"<<exception.what()<<endl;
         }
 
     }
@@ -477,11 +478,13 @@ int main(int argc, char *argv[]) {
         frame_id = (frame_id + 1) % 360;
         frameCount++;
 
+        cout<<"try to capture frame!!!!";
         do {
             openVideoCapture(originalFrame.empty());
             videoCapture >> originalFrame;
         } while (originalFrame.empty());
 
+        cout<<"captrued framed!!!!"<<endl;
 
         int sourceWidth = originalFrame.cols;
         int sourceHeight = originalFrame.rows;
@@ -501,6 +504,7 @@ int main(int argc, char *argv[]) {
 
         Mat resized = originalFrame.clone();
 
+        cout<<"try to resize images!!!!";
         resized = originalFrame(Rect(
                 (sourceWidth / (2 * realZoom)) * (realZoom - 1),
                 (sourceHeight / (2 * realZoom)) * (realZoom - 1),
@@ -508,6 +512,7 @@ int main(int argc, char *argv[]) {
                 sourceHeight - ((sourceHeight / realZoom) * (realZoom - 1))));
 
         resize(resized, frame, Size(width, height), INTER_LINEAR);
+cout<<"image resdized!"<<endl;
 
         float half_width = width / 2.0;
         float half_height = height / 2.0;
