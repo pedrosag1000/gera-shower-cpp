@@ -122,18 +122,21 @@ void openVideoCapture(bool force = false) {
 }
 
 void setVideoCaptureAddressByIP(string ip) {
+
     cout << "IP Address of video capture: " << ip << endl;
-    string first = "rtspsrc location=rtsp://admin:Admin1401@";
-    string second = ":554/streaming/channels/101 latency=10 is-live=true drop-on-latency=1 tcp-timeout=1000 teardown-timeout=1000 timeout=1000 ! rtph264depay ! h264parse ! decodebin ! autovideoconvert ! video/x-raw,format=BGRx ! videoconvert ! video/x-raw,format=BGR ! appsink drop=true sync=false";
-    auto tmp = first + ip + second;
-    auto ipTmp = explode(ip, '.');
-    ip1 = stoi(ipTmp[0]);
-    ip2 = stoi(ipTmp[1]);
-    ip3 = stoi(ipTmp[2]);
-    ip4 = stoi(ipTmp[3]);
-    if (tmp != videoCaptureAddress) {
-        videoCapture.release();
-        videoCaptureAddress = tmp;
+    if (ip == "192.168.1.90" || ip == "192.168.1.110") {
+        string first = "rtspsrc location=rtsp://admin:Admin1401@";
+        string second = ":554/streaming/channels/101 latency=10 is-live=true drop-on-latency=1 tcp-timeout=1000 teardown-timeout=1000 timeout=1000 ! rtph264depay ! h264parse ! decodebin ! autovideoconvert ! video/x-raw,format=BGRx ! videoconvert ! video/x-raw,format=BGR ! appsink drop=true sync=false";
+        auto tmp = first + ip + second;
+        auto ipTmp = explode(ip, '.');
+        ip1 = stoi(ipTmp[0]);
+        ip2 = stoi(ipTmp[1]);
+        ip3 = stoi(ipTmp[2]);
+        ip4 = stoi(ipTmp[3]);
+        if (tmp != videoCaptureAddress) {
+            videoCapture.release();
+            videoCaptureAddress = tmp;
+        }
     }
 }
 
@@ -339,7 +342,9 @@ void mouseCallback(int event, int x, int y, int flags, void *userdata) {
 
 
 int main(int argc, char *argv[]) {
+
     double ratio = 1;
+
     if (argc != 5) {
 
         cout << "You should insert 4 args" << endl
@@ -361,7 +366,7 @@ int main(int argc, char *argv[]) {
 
     // Create serial port object and open serial port at 57600 buad, 8 data bits, no parity bit, one stop bit (8n1),
     // and no flow control
-    serialPort=SerialPort(argv[2], BaudRate::B_115200, NumDataBits::EIGHT, Parity::NONE, NumStopBits::ONE);
+    serialPort = SerialPort(argv[2], BaudRate::B_115200, NumDataBits::EIGHT, Parity::NONE, NumStopBits::ONE);
     // Use SerialPort serialPort("/dev/ttyACM0", 13000); instead if you want to provide a custom baud rate
     serialPort.SetTimeout(1); // Block for up to 0ms to receive data
     serialPort.Open();
@@ -389,7 +394,6 @@ int main(int argc, char *argv[]) {
 
     thread showVideoThread(showFrameToVideoOutput);
     thread serialThread(sendAndReceiveDataFromToThread);
-
 
     openVideoCapture();
 
