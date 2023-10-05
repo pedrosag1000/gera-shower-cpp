@@ -30,7 +30,7 @@ SerialPort serialPort;
 void segfault_sigaction(int signal, siginfo_t *si, void *arg)
 {
     printf("Caught segfault at address %p\n", si->si_addr);
-    exit(0);
+//    exit(0);
 }
 
 const vector<string> explode(const string &s, const char &c) {
@@ -398,7 +398,7 @@ int main(int argc, char *argv[]) {
     sa.sa_flags   = SA_SIGINFO;
 
     sigaction(SIGSEGV, &sa, NULL);
-    
+
     double ratio = 1;
 
 
