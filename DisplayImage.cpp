@@ -107,7 +107,8 @@ Point touchedPoint(0, 0);
 int touchId = 0;
 int lastTouchReported = 0;
 string outputBuffer;
-
+string videoWriterAddress;
+int display_width;
 void openVideoCapture(bool force = false) {
     while (!videoCapture.isOpened() || force) {
         cout << "Waiting for camera" << endl;
@@ -116,6 +117,7 @@ void openVideoCapture(bool force = false) {
         cout.flush();
         waitKey(1000);
         videoCapture.release();
+        if(!videoCaptureAddress.empty())
         videoCapture = VideoCapture(videoCaptureAddress, CAP_GSTREAMER);
         force = false;
     }
@@ -142,6 +144,7 @@ void setVideoCaptureAddressByIP(string ip) {
 
 
 void sendAndReceiveDataFromToThread(){
+
     string readData,allReadData="";
     char startChar = char(255), secondStartChar = char(254);
     bool isDataStarted = false;
@@ -207,83 +210,115 @@ void sendAndReceiveDataFromToThread(){
 
         allReadData.append(readData);
 
-        if (!isDataStarted) {
-            startPosition = allReadData.find(startChar);
-            if (startPosition >= 0 && allReadData.size() >= 4 && allReadData[startPosition + 1] == secondStartChar &&
-                allReadData[startPosition + 2] == (char) 18) {
+        cout << "ALIVE " << endl;
 
-                isDataStarted = true;
-                startPosition = -1;
-                serialLength = allReadData[3];
-
-                allReadData = allReadData.substr(startPosition + 5, allReadData.length());
-
-            }
-        } else {
-
-            if (allReadData.size() >= serialLength) {
+        startPosition = allReadData.find(startChar);
 
 
-                auto data = allReadData.substr(0, serialLength);
+        cout << "START:" << (int)startPosition << endl;
+        cout << "SIZE:" << (int)allReadData.size() << endl;
 
-                // process data in allReadData
+        cout << "HEADER:" <<  " " +
+
+                              to_string(allReadData[startPosition + 0]) + " " +
+                              to_string(allReadData[startPosition + 1]) + " " +
+                              to_string(allReadData[startPosition + 2]) + " " +
+                              to_string(allReadData[startPosition + 3]) + " " << endl;
 
 
 
-                //radar 2 byte
-                //view angle 1 byte
-                //vertical angle 1 byte
-                //horizental angle 1 byte
-                //zoom 1 byte
+        if (startPosition >= 0 && allReadData.size() >= 15 		&&
+            allReadData[startPosition + 1] == (char) 254		&&
+            allReadData[startPosition + 2] == (char) 18 		&&
+            allReadData[startPosition + 3] == (char) 11) {
 
-                radar_angle = allReadData[0] * 256 + allReadData[1];
+            if (allReadData.size() > 15) {
 
-                //   cout << "Processed data: " << allReadData << endl;
+                radar_angle = allReadData[startPosition + 4] * 256 + allReadData[startPosition + 5];
 
-                view_angle = (int) allReadData[2] - 100;
-                vertical_angle = (int) allReadData[3];
-                horizental_angle = (int) allReadData[4];
-                zoom = (int) allReadData[5] / 10;
+                view_angle = (int) allReadData[startPosition + 6] - 100;
+
+                vertical_angle = (int) allReadData[startPosition + 7];
+
+                horizental_angle = (int) allReadData[startPosition + 8];
+
+                zoom = (int) allReadData[startPosition + 9] / 10;
 
 
                 setVideoCaptureAddressByIP(
-                        to_string(allReadData[6]) + '.' +
-                        to_string(allReadData[7]) + '.' +
-                        to_string(allReadData[8]) + '.' +
-                        to_string(allReadData[9]));
-
-                if (zoom < 1)
-                    zoom = 1;
-
-//                    cout<<"radar angle: "<<radar_angle<<endl;
-//                    cout<<"vertical angle: "<<vertical_angle<<endl;
-//                    cout<<"horizental angle: "<<horizental_angle<<endl;
-//                    cout<<"zoom: "<<zoom<<endl;
-//                    cout<<"ip: "<<to_string(allReadData[6]) + '.' +
-//                                  to_string(allReadData[7]) + '.' +
-//                                  to_string(allReadData[8]) + '.' +
-//                                  to_string(allReadData[9])<<endl;
+                        to_string(allReadData[startPosition + 10]) + '.' +
+                        to_string(allReadData[startPosition + 11]) + '.' +
+                        to_string(allReadData[startPosition + 12]) + '.' +
+                        to_string(allReadData[startPosition + 13]));
 
 
 
-                isDataStarted = false;
+                cout<<"AZIMUTH ENCODER: " << radar_angle << endl;
+                cout<<"ELEVATION ENCODER: " << view_angle << endl;
+                cout<<"AZIMUTH RETICLE RANGE: " << vertical_angle << endl;
+                cout<<"ELEVATION RETICLE RANGE: " << horizental_angle << endl;
+                cout<<"ZOOM: " << zoom << endl;
 
-                // flush
-                allReadData = allReadData.substr(serialLength, allReadData.size());
-            } else {
-//                cout << "waiting for data to be finished.. remaining byte: "<<serialLength-allReadData.size() << endl;
+                cout<<"IP: " << to_string(allReadData[startPosition + 10]) + '.' +
+                                to_string(allReadData[startPosition + 11]) + '.' +
+                                to_string(allReadData[startPosition + 12]) + '.' +
+                                to_string(allReadData[startPosition + 13]) << endl;
+
+
+                allReadData.erase(0, startPosition + 15);
+
+                cout << "REMOVE1" << endl;
+            }
+
+        }
+        else
+        {
+            if (allReadData.size() > 1) {
+                allReadData.erase(0, startPosition + 1);
+
+                cout << "REMOVE2" << endl;
             }
         }
 
-
-        this_thread::sleep_for(chrono::milliseconds(100));
+        if (allReadData.size() > 100)
+        {
+            this_thread::sleep_for(chrono::milliseconds(10));
+        }
+        else
+        {
+            this_thread::sleep_for(chrono::milliseconds(100));
+        }
     }
-
-
 }
 
 
+
+
 void writeFrameToVideoWriter() {
+
+        while(!videoWriter.isOpened()){
+            if(!painted_frame.empty()){
+                int sourceWidth = originalFrame.cols;
+                int sourceHeight = originalFrame.rows;
+                int width = sourceWidth, height = sourceHeight;
+
+                if (width > display_width) {
+                    int ratio = (double) display_width / sourceWidth;
+
+                    width = (int) (sourceWidth * ratio);
+                    height = (int) (sourceHeight * ratio);
+                }
+//                cout << "Video writer starting with "<<videoWriterAddress<< " : " << width << "x" << height << endl;
+                videoWriter.open(videoWriterAddress, CAP_GSTREAMER, 0, (double) 30, Size(width, height));
+                if(!videoWriter.isOpened())
+                    this_thread::sleep_for(chrono::milliseconds(1000));
+                else
+                cout << "Video writer started" << endl;
+
+
+            }
+
+        }
     int lastFrameId = 0;
     while (pressed_key != 27) {
         if (lastFrameId != painted_frame_id) {
@@ -358,9 +393,9 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    videoWriterAddress=argv[4];
 
-    int display_width = stoi(argv[3]);
-
+    display_width = stoi(argv[3]);
 
     splashScreen = imread("splash.png");
 
@@ -386,7 +421,6 @@ int main(int argc, char *argv[]) {
     setWindowProperty(" ", WND_PROP_FULLSCREEN, WINDOW_FULLSCREEN);
 
     setVideoCaptureAddressByIP(argv[1]);
-    cout << "Video address: " << videoCaptureAddress << endl;
 
     cout << "Camera connection is opened" << endl;
 
@@ -394,36 +428,19 @@ int main(int argc, char *argv[]) {
 
     thread showVideoThread(showFrameToVideoOutput);
     thread serialThread(sendAndReceiveDataFromToThread);
+    thread writerVideoThread(writeFrameToVideoWriter);
 
-    openVideoCapture();
-
-    videoCapture >> originalFrame;
-    int sourceWidth = originalFrame.cols;
-    int sourceHeight = originalFrame.rows;
-    int width = sourceWidth, height = sourceHeight;
-
-    if (width > display_width) {
-        ratio = (double) display_width / sourceWidth;
-
-        width = (int) (sourceWidth * ratio);
-        height = (int) (sourceHeight * ratio);
-    }
 
     time_t now;
     tm *currentTime;
     char dateTimeChar[100];
-    cout << "Video writer started with : " << width << "x" << height << endl;
 
 
-    videoWriter.open(argv[4], CAP_GSTREAMER, 0, (double) 30, Size(width, height));
 
-
-    thread writerVideoThread(writeFrameToVideoWriter);
 
     auto lastTime = currentMS();
     auto nowTime = lastTime;
     int frameCount = 0;
-
 
     while (pressed_key != 27) {
 
@@ -443,8 +460,10 @@ int main(int argc, char *argv[]) {
         } while (originalFrame.empty());
 
 
-        sourceWidth = originalFrame.cols;
-        sourceHeight = originalFrame.rows;
+        int sourceWidth = originalFrame.cols;
+        int sourceHeight = originalFrame.rows;
+        int width=sourceWidth,height=sourceHeight;
+
 
         if (width > display_width) {
             ratio = (double) display_width / sourceWidth;
