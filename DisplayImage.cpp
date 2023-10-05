@@ -124,12 +124,12 @@ void openVideoCapture(bool force = false) {
         cout << "Waiting for camera" << endl;
         painted_frame = splashScreen;
         painted_frame_id++;
-        cout.flush();
-        cout<<"wait for 1 sec";
+
+        cout<<"wait for 1 sec"<<endl;
         waitKey(1000);
-        cout<<"Try to release camera";
+        cout<<"Try to release camera"<<endl;
         videoCapture.release();
-        cout<<"camera released";
+        cout<<"camera released"<<endl;
         if(!videoCaptureAddress.empty()) {
             cout<<"Try to capture camera";
             videoCapture = VideoCapture(videoCaptureAddress, CAP_GSTREAMER);
