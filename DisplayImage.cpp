@@ -31,6 +31,7 @@ void segfault_sigaction(int signal, siginfo_t *si, void *arg)
 {
     printf("Caught segfault at address %p\n", si->si_addr);
 //    exit(0);
+    throw exception();
 }
 
 const vector<string> explode(const string &s, const char &c) {
