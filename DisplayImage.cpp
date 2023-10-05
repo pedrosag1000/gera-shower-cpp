@@ -120,14 +120,9 @@ void openVideoCapture(bool force = false) {
         painted_frame_id++;
         cout.flush();
         waitKey(1000);
-        cout<<"Try to release camera";
         videoCapture.release();
-        cout<<"camera released";
-        if(!videoCaptureAddress.empty()) {
-            cout<<"Try to capture camera";
-            videoCapture = VideoCapture(videoCaptureAddress, CAP_GSTREAMER);
-            cout<<"end to capture camera";
-        }
+        if(!videoCaptureAddress.empty())
+        videoCapture = VideoCapture(videoCaptureAddress, CAP_GSTREAMER);
         force = false;
     }
 }
