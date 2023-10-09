@@ -544,7 +544,7 @@ void readFrameFromVideoCapture() {
         paintedFrame=defaultMath.clone();
         frame.copyTo(paintedFrame.colRange(paintedFrame.cols-frame.cols/2,paintedFrame.cols-frame.cols/2+frame.cols).rowRange(0,paintedFrame.rows));
         paintedFrameId = frameId;
-        
+
 
 //        if (frameId % 30 == 0) {
 //            cout << " OPENCV FPS " << getTickFrequency() / (getTickCount() - tickCount) << endl;
@@ -639,9 +639,7 @@ int main(int argc, char *argv[]) {
     //namedWindow(" ", WINDOW_OPENGL);
     setMouseCallback(" ", mouseCallback, nullptr);
     setWindowProperty(" ", WND_PROP_FULLSCREEN, WINDOW_FULLSCREEN);
-    HWND hwnd = FindWindow(0, L" ");//get window through Windows API
-    SetClassLongPtr(hwnd, GCLP_HBRBACKGROUND, (LONG) CreateSolidBrush(RGB(0, 0, 0)));//set window background to black; you can change the colour in the RGB()
-
+    
     setVideoCaptureAddressByIP(argv[1]);
 
     cout << "Camera connection is opened" << endl;
