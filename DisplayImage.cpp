@@ -313,7 +313,7 @@ void writeFrameToVideoWriter() {
 
     string filename = "output.mp4";
     videoWriterAddress =
-            "appsrc ! video/x-raw, format=BGR ! queue ! videoconvert ! video/x-raw,format=NV12 ! autovideoconvert ! x265enc ! h265parse ! qtmux ! filesink location=" +
+            "appsrc ! video/x-raw, format=BGR ! queue ! videoconvert ! video/x-raw,format=NV12 ! nvv4l2h265enc ! h265parse ! qtmux ! filesink location=" +
             filename + " sync=false";
     while (!videoWriter.isOpened()) {
         if (!painted_frame.empty()) {
