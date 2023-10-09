@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.1)
 
 project( DisplayImage )
 set(THREADS_PREFER_PTHREADS_FLAG ON)
-SET(CMAKE_CXX_FLAGS "-fsanitize=address")
+#SET(CMAKE_CXX_FLAGS "-fsanitize=address")
 
 find_package( OpenCV REQUIRED )
 find_package(CppLinuxSerial REQUIRED)
