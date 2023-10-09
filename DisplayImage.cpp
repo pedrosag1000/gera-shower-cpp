@@ -5,8 +5,7 @@
 #include <ctime>
 #include <thread>
 #include<stdlib.h>
-
-#include <signal.h>
+#include <mutex>
 
 using namespace cv;
 
@@ -17,7 +16,8 @@ using namespace mn::CppLinuxSerial;
 #define PI 3.14159265
 
 int ip1 = 0, ip2 = 0, ip3 = 0, ip4 = 0;
-
+#define QUEUE_SIZE 10;
+Mat paintedFrames[10];
 
 int radar_angle = -100, radar_size_of_angle = 20;
 int view_angle = -100, view_size_of_angle = 20;
@@ -114,8 +114,8 @@ draw_arch(Mat frame, Point center, int circle_radius, int view_angle, int size_o
 VideoWriter videoWriter;
 VideoCapture videoCapture;
 string videoCaptureAddress;
-int frameId = 0, paintedFrameId = 0;
-Mat frame, originalFrame, paintedFrame, splashScreen;
+int paintedFrameId = 0;
+Mat frame, originalFrame, splashScreen;
 int pressedKey = 10;
 Point touchedPoint(0, 0);
 int touchId = 0;
@@ -127,9 +127,7 @@ int displayWidth,displayHeight;
 void openVideoCapture(bool force = false) {
     while (!videoCapture.isOpened() || force) {
         cout << "Waiting for camera" << endl;
-        paintedFrame = splashScreen;
-        paintedFrameId++;
-        cout.flush();
+        paintedFrames[++paintedFrameId] = splashScreen;
         waitKey(1000);
         videoCapture.release();
         if (!videoCaptureAddress.empty()) {
@@ -181,7 +179,7 @@ void sendAndReceiveDataFromToThread() {
         readData.clear();
         serialPort.Read(readData);
 
-        if (lastTouchReported != touchId || frameId % 10 == 0) {
+        if (lastTouchReported != touchId || paintedFrameId % 10 == 0) {
             outputBuffer = "";
             int checksum = 0;
             //start flags
@@ -330,10 +328,10 @@ void writeFrameToVideoWriter() {
             "appsrc ! video/x-raw, format=BGR ! queue ! videoconvert ! video/x-raw,format=I420 ! x264enc ! mp4mux ! filesink location=" +
             videoWriterFileFullPath + " sync=false";
     while (!videoWriter.isOpened()) {
-        if (!paintedFrame.empty()) {
+        if (!paintedFrames[paintedFrameId].empty()) {
 
-            cout << "Video writer starting with "<<videoWriterFileFullPath<< " : " << paintedFrame.cols << "x" << paintedFrame.rows << endl;
-            videoWriter.open(videoWriterFileFullPath, CAP_GSTREAMER, 0, (double) 30, Size( paintedFrame.cols, paintedFrame.rows));
+            cout << "Video writer starting with "<<videoWriterFileFullPath<< " : " << paintedFrames[paintedFrameId].cols << "x" << paintedFrames[paintedFrameId].rows << endl;
+            videoWriter.open(videoWriterFileFullPath, CAP_GSTREAMER, 0, (double) 30, Size( paintedFrames[paintedFrameId].cols, paintedFrames[paintedFrameId].rows));
             if (!videoWriter.isOpened())
                 this_thread::sleep_for(chrono::milliseconds(1000));
             else
@@ -348,8 +346,8 @@ void writeFrameToVideoWriter() {
     while (pressedKey != 27) {
         diff = paintedFrameId - lastFrameId;
         if (diff != 0) {
-            videoWriter.write(paintedFrame);
             lastFrameId += diff;
+            videoWriter.write(paintedFrames[lastFrameId]);
         } else {
             this_thread::sleep_for(chrono::milliseconds(10));
         }
@@ -373,8 +371,7 @@ void readFrameFromVideoCapture() {
 
     auto lastTime = currentMS();
     auto nowTime = lastTime;
-    int frameCount = 0;
-
+    int frameCount=0;
 
 
     Mat defaultMath(displayHeight,displayWidth, 16,Scalar(0));
@@ -385,9 +382,6 @@ void readFrameFromVideoCapture() {
         currentTime = localtime(&now);
         strftime(dateTimeChar, 50, "%Y/%m/%d %H:%M:%S", currentTime);
 
-
-        frameId = (frameId + 1) % 360;
-        frameCount++;
 
         do {
             openVideoCapture(originalFrame.empty());
@@ -468,7 +462,7 @@ void readFrameFromVideoCapture() {
                 circle_center,
                 circle_radius,
                 // -90 is for start angle from top of the circle not the right angle of it
-                (radar_angle < 0 ? (180 + frameId) : radar_angle) - 90,
+                (radar_angle < 0 ? (180 + paintedFrameId) : radar_angle) - 90,
                 radar_size_of_angle,
                 Scalar(0, 0, 255),
                 2, true, 0.4, true, radar_angle);
@@ -491,7 +485,7 @@ void readFrameFromVideoCapture() {
                 Scalar(0, 255, 0),
                 1);
 
-        int view_angle_temp = view_angle < -90 ? (frameId / 10 % 100) - 10 : view_angle;
+        int view_angle_temp = view_angle < -90 ? (paintedFrameId / 10 % 100) - 10 : view_angle;
         view_angle_temp = ((view_angle_temp + 10) % 90) - 10;
 
         draw_arch(
@@ -539,21 +533,16 @@ void readFrameFromVideoCapture() {
         draw_text_vertical_center(frame, " Power OFF", Point( 0, height - line_height), FONT_HERSHEY_SIMPLEX, 1,
                          red ? Scalar(0, 0, 255) : Scalar(0, 255, 0), 1);
 
+        int newPaintedFrameId=(paintedFrameId+1)%10;
+        paintedFrames[newPaintedFrameId]=defaultMath.clone();
+        cv::Rect roi( cv::Point( (paintedFrames[newPaintedFrameId].cols-frame.cols)/2, (paintedFrames[newPaintedFrameId].rows-frame.rows)/2 ), frame.size() );
+
+        frame.copyTo(paintedFrames[newPaintedFrameId](roi));
 
 
-        paintedFrame=defaultMath.clone();
-        cv::Rect roi( cv::Point( (paintedFrame.cols-frame.cols)/2, (paintedFrame.rows-frame.rows)/2 ), frame.size() );
+        paintedFrameId=newPaintedFrameId;
+        frameCount++;
 
-        //frame.copyTo(paintedFrame.colRange(,(paintedFrame.cols-frame.cols)/2+frame.cols));
-        frame.copyTo(paintedFrame(roi));
-
-
-        paintedFrameId = frameId;
-
-
-//        if (frameId % 30 == 0) {
-//            cout << " OPENCV FPS " << getTickFrequency() / (getTickCount() - tickCount) << endl;
-//        }
 
 
         if (frameCount >= 30) {
@@ -583,9 +572,9 @@ void showFrameToVideoOutput() {
         if (delta != 0) {
             frameId += delta;
             frameCount++;
-            if (!paintedFrame.empty() && paintedFrame.cols > 0 && paintedFrame.rows > 0) {
+            if (!paintedFrames[frameId].empty() && paintedFrames[frameId].cols > 0 && paintedFrames[frameId].rows > 0) {
                 try {
-                    imshow(" ", paintedFrame);
+                    imshow(" ", paintedFrames[frameId]);
                 }
                 catch (int e) {
                     cout << "Error on showing image: " << e << endl;
@@ -635,6 +624,16 @@ int main(int argc, char *argv[]) {
     displayHeight = stoi(argv[4]);
 
     splashScreen = imread("splash.png");
+
+
+
+    Mat defaultMath(displayHeight,displayWidth, 16,Scalar(0));
+    paintedFrames[paintedFrameId]=defaultMath.clone();
+
+    cv::Rect roi( cv::Point( (paintedFrames[paintedFrameId].cols-splashScreen.cols)/2, (paintedFrames[paintedFrameId].rows-splashScreen.rows)/2 ), splashScreen.size() );
+    splashScreen.copyTo(paintedFrames[paintedFrameId](roi));
+    paintedFrames[paintedFrameId]=splashScreen;
+
 
     serialPortAddress = argv[2];
 
