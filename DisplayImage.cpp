@@ -102,21 +102,21 @@ draw_arch(Mat frame, Point center, int circle_radius, int view_angle, int size_o
 VideoWriter videoWriter;
 VideoCapture videoCapture;
 string videoCaptureAddress;
-int frame_id = 0, painted_frame_id = 0;
-Mat frame, originalFrame, painted_frame, splashScreen;
-int pressed_key = 10;
+int frameId = 0, paintedFrameId = 0;
+Mat frame, originalFrame, paintedFrame, splashScreen;
+int pressedKey = 10;
 Point touchedPoint(0, 0);
 int touchId = 0;
 int lastTouchReported = 0;
 string outputBuffer;
 string videoWriterFileFullPath;
-int display_width;
+int displayWidth;
 
 void openVideoCapture(bool force = false) {
     while (!videoCapture.isOpened() || force) {
         cout << "Waiting for camera" << endl;
-        painted_frame = splashScreen;
-        painted_frame_id++;
+        paintedFrame = splashScreen;
+        paintedFrameId++;
         cout.flush();
         waitKey(1000);
         videoCapture.release();
@@ -164,11 +164,11 @@ void sendAndReceiveDataFromToThread() {
     bool isDataStarted = false;
     int startPosition = -1, serialLength = 0;
 
-    while (pressed_key!=27) {
+    while (pressedKey != 27) {
         readData.clear();
         serialPort.Read(readData);
 
-        if (lastTouchReported != touchId || frame_id % 10 == 0) {
+        if (lastTouchReported != touchId || frameId % 10 == 0) {
             outputBuffer = "";
             int checksum = 0;
             //start flags
@@ -317,19 +317,10 @@ void writeFrameToVideoWriter() {
             "appsrc ! video/x-raw, format=BGR ! queue ! videoconvert ! video/x-raw,format=I420 ! x264enc ! mp4mux ! filesink location=" +
             videoWriterFileFullPath + " sync=false";
     while (!videoWriter.isOpened()) {
-        if (!painted_frame.empty()) {
-            int sourceWidth = originalFrame.cols;
-            int sourceHeight = originalFrame.rows;
-            int width = sourceWidth, height = sourceHeight;
-
-            if (width > display_width) {
-                int ratio = (double) display_width / sourceWidth;
-
-                width = (int) (sourceWidth * ratio);
-                height = (int) (sourceHeight * ratio);
-            }
-            cout << "Video writer starting with "<<videoWriterFileFullPath<< " : " << width << "x" << height << endl;
-            videoWriter.open(videoWriterFileFullPath, CAP_GSTREAMER, 0, (double) 30, Size(width, height));
+        if (!paintedFrame.empty()) {
+           
+            cout << "Video writer starting with "<<videoWriterFileFullPath<< " : " << paintedFrame.cols << "x" << paintedFrame.rows << endl;
+            videoWriter.open(videoWriterFileFullPath, CAP_GSTREAMER, 0, (double) 30, Size( paintedFrame.cols, paintedFrame.rows));
             if (!videoWriter.isOpened())
                 this_thread::sleep_for(chrono::milliseconds(1000));
             else
@@ -340,10 +331,10 @@ void writeFrameToVideoWriter() {
 
     }
     int lastFrameId = 0;
-    while (pressed_key != 27) {
-        if (lastFrameId != painted_frame_id) {
-            videoWriter.write(painted_frame);
-            lastFrameId = painted_frame_id;
+    while (pressedKey != 27) {
+        if (lastFrameId != paintedFrameId) {
+            videoWriter.write(paintedFrame);
+            lastFrameId = paintedFrameId;
         } else {
             this_thread::sleep_for(chrono::milliseconds(10));
         }
@@ -368,16 +359,15 @@ void readFrameFromVideoCapture() {
     auto nowTime = lastTime;
     int frameCount = 0;
 
-    while (pressed_key != 27) {
+    while (pressedKey != 27) {
 
         nowTime = currentMS();
-        long long tickCount = getTickCount();
         time(&now);
         currentTime = localtime(&now);
         strftime(dateTimeChar, 50, "%Y/%m/%d %H:%M:%S", currentTime);
 
 
-        frame_id = (frame_id + 1) % 360;
+        frameId = (frameId + 1) % 360;
         frameCount++;
 
         do {
@@ -391,8 +381,8 @@ void readFrameFromVideoCapture() {
         int width = sourceWidth, height = sourceHeight;
 
 
-        if (width > display_width) {
-            ratio = (double) display_width / sourceWidth;
+        if (width > displayWidth) {
+            ratio = (double) displayWidth / sourceWidth;
 
             width = (int) (sourceWidth * ratio);
             height = (int) (sourceHeight * ratio);
@@ -459,13 +449,13 @@ void readFrameFromVideoCapture() {
                 circle_center,
                 circle_radius,
                 // -90 is for start angle from top of the circle not the right angle of it
-                (radar_angle < 0 ? (180 + frame_id) : radar_angle) - 90,
+                (radar_angle < 0 ? (180 + frameId) : radar_angle) - 90,
                 radar_size_of_angle,
                 Scalar(0, 0, 255),
                 2, true, 0.4, true, radar_angle);
 
         // putText(frame,
-        //         to_string(radar_angle < 0 ? 180 + frame_id : radar_angle),
+        //         to_string(radar_angle < 0 ? 180 + frameId : radar_angle),
 
         //         circle_center, FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 0, 255), 2);
 
@@ -482,7 +472,7 @@ void readFrameFromVideoCapture() {
                 Scalar(0, 255, 0),
                 1);
 
-        int view_angle_temp = view_angle < -90 ? (frame_id / 10 % 100) - 10 : view_angle;
+        int view_angle_temp = view_angle < -90 ? (frameId / 10 % 100) - 10 : view_angle;
         view_angle_temp = ((view_angle_temp + 10) % 90) - 10;
 
         draw_arch(
@@ -531,19 +521,19 @@ void readFrameFromVideoCapture() {
                          red ? Scalar(0, 0, 255) : Scalar(0, 255, 0), 1);
 
 
-        painted_frame = frame.clone();
-        painted_frame_id = frame_id;
+        paintedFrame = frame.clone();
+        paintedFrameId = frameId;
 
 
 
 
-//        if (frame_id % 30 == 0) {
+//        if (frameId % 30 == 0) {
 //            cout << " OPENCV FPS " << getTickFrequency() / (getTickCount() - tickCount) << endl;
 //        }
 
 
         if (frameCount >= 30) {
-            cout << "frame id: " << painted_frame_id << " Read FPS: " << frameCount / ((nowTime - lastTime) / 1000.0)
+            cout << "frame id: " << paintedFrameId << " Read FPS: " << frameCount / ((nowTime - lastTime) / 1000.0)
                  << endl;
 
             lastTime = nowTime;
@@ -561,17 +551,17 @@ void showFrameToVideoOutput() {
 
     auto lastTime = currentMS();
     auto nowTime = lastTime;
-    while (pressed_key != 27) {
+    while (pressedKey != 27) {
 
         nowTime = currentMS();
 
-        delta = painted_frame_id - frameId;
+        delta = paintedFrameId - frameId;
         if (delta != 0 || true) {
             frameId += delta;
             frameCount++;
-            if (!painted_frame.empty()) {
+            if (!paintedFrame.empty()) {
                 try {
-                    imshow(" ", painted_frame);
+                    imshow(" ", paintedFrame);
                 }
                 catch (int e) {
                     cout << "Error on showing image: " << e << endl;
@@ -584,7 +574,7 @@ void showFrameToVideoOutput() {
             frameCount = 0;
             lastTime = nowTime;
         }
-        pressed_key = waitKey(25);
+        pressedKey = waitKey(25);
 
     }
 }
@@ -616,7 +606,7 @@ int main(int argc, char *argv[]) {
 
     videoWriterFileFullPath = argv[4];
 
-    display_width = stoi(argv[3]);
+    displayWidth = stoi(argv[3]);
 
     splashScreen = imread("splash.png");
 
