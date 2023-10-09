@@ -394,7 +394,7 @@ void readFrameFromVideoCapture() {
         int sourceWidth = originalFrame.cols;
         int sourceHeight = originalFrame.rows;
         int width = sourceWidth, height = sourceHeight;
-
+        int newPaintedFrameId=(paintedFrameId+1)%10;
 
         if (width > displayWidth) {
             ratio = (double) displayWidth / sourceWidth;
@@ -417,6 +417,18 @@ void readFrameFromVideoCapture() {
 
         resize(resized, frame, Size(width, height), INTER_LINEAR);
 
+        paintedFrames[newPaintedFrameId]=defaultMath.clone();
+        cv::Rect roi( cv::Point( (paintedFrames[newPaintedFrameId].cols-frame.cols)/2, (paintedFrames[newPaintedFrameId].rows-frame.rows)/2 ), frame.size() );
+
+        frame.copyTo(paintedFrames[newPaintedFrameId](roi));
+
+
+        width=paintedFrames[newPaintedFrameId].cols;
+        height=paintedFrames[newPaintedFrameId].rows;
+
+
+
+
         float half_width = width / 2.0;
         float half_height = height / 2.0;
 
@@ -424,8 +436,8 @@ void readFrameFromVideoCapture() {
         float quarter_height = height / 4.0;
 
         // Draw center lines
-        line(frame, Point(half_width, 0), Point(half_width, height), Scalar(0, 255, 0), 1);
-        line(frame, Point(0, half_height), Point(width, half_height), Scalar(0, 255, 0), 1);
+        line(paintedFrames[newPaintedFrameId], Point(half_width, 0), Point(half_width, height), Scalar(0, 255, 0), 1);
+        line(paintedFrames[newPaintedFrameId], Point(0, half_height), Point(width, half_height), Scalar(0, 255, 0), 1);
 
 
 
@@ -439,13 +451,13 @@ void readFrameFromVideoCapture() {
 
         for (int i = 1; i <= grid_counts; i++) {
             line(
-                    frame,
+                    paintedFrames[newPaintedFrameId],
                     Point(int(i * line_width), int(half_height - one_height)),
                     Point(int(i * line_width), int(half_height + one_height)),
                     Scalar(0, 255, 0),
                     1);
             line(
-                    frame,
+                    paintedFrames[newPaintedFrameId],
                     Point(int(half_width - one_width), int(i * line_height)),
                     Point(int(half_width + one_width), int(i * line_height)),
                     Scalar(0, 255, 0),
@@ -456,11 +468,11 @@ void readFrameFromVideoCapture() {
         int circle_radius = int(quarter_height / 3);
         Point circle_center = Point(int(width - circle_radius) - 10, circle_radius + 10);
 
-        circle(frame, circle_center, circle_radius,
+        circle(paintedFrames[newPaintedFrameId], circle_center, circle_radius,
                Scalar(0, 255, 0));
 
         draw_arch(
-                frame,
+                paintedFrames[newPaintedFrameId],
                 circle_center,
                 circle_radius,
                 // -90 is for start angle from top of the circle not the right angle of it
@@ -479,7 +491,7 @@ void readFrameFromVideoCapture() {
         circle_center = Point(int(width - circle_radius) - 10, height - circle_radius * .5);
 
         draw_arch(
-                frame,
+                paintedFrames[newPaintedFrameId],
                 circle_center,
                 circle_radius,
                 (280 + 370) / 2,
@@ -491,7 +503,7 @@ void readFrameFromVideoCapture() {
         view_angle_temp = ((view_angle_temp + 10) % 90) - 10;
 
         draw_arch(
-                frame,
+                paintedFrames[newPaintedFrameId],
                 circle_center,
                 circle_radius,
                 10 - (view_angle_temp + 10),
@@ -506,22 +518,22 @@ void readFrameFromVideoCapture() {
 
         // show horizental angle
 
-        draw_text_center(frame, to_string(horizental_angle / 2), Point(width - line_width, half_height),
+        draw_text_center(paintedFrames[newPaintedFrameId], to_string(horizental_angle / 2), Point(width - line_width, half_height),
                          FONT_HERSHEY_SIMPLEX, .7, Scalar(0, 0, 255), 2);
-        draw_text_center(frame, to_string(-horizental_angle / 2), Point(line_width, half_height), FONT_HERSHEY_SIMPLEX,
+        draw_text_center(paintedFrames[newPaintedFrameId], to_string(-horizental_angle / 2), Point(line_width, half_height), FONT_HERSHEY_SIMPLEX,
                          .7, Scalar(0, 0, 255), 2);
 
         // show vertical angle
-        draw_text_center(frame, to_string(vertical_angle / 2), Point(half_width, line_height), FONT_HERSHEY_SIMPLEX, .7,
+        draw_text_center(paintedFrames[newPaintedFrameId], to_string(vertical_angle / 2), Point(half_width, line_height), FONT_HERSHEY_SIMPLEX, .7,
                          Scalar(0, 0, 255), 2);
-        draw_text_center(frame, to_string(-vertical_angle / 2), Point(half_width, height - line_height),
+        draw_text_center(paintedFrames[newPaintedFrameId], to_string(-vertical_angle / 2), Point(half_width, height - line_height),
                          FONT_HERSHEY_SIMPLEX, .7, Scalar(0, 0, 255), 2);
 
         // show zoom
-        draw_text_center(frame, to_string((int) zoom) + "." + to_string((int) ((zoom - (int) zoom) / .1) % 10) + "X",
+        draw_text_center(paintedFrames[newPaintedFrameId], to_string((int) zoom) + "." + to_string((int) ((zoom - (int) zoom) / .1) % 10) + "X",
                          Point(line_width, line_height), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 0, 255), 2);
 
-        draw_text_center(frame, string(dateTimeChar), Point(4 * line_width, line_height), FONT_HERSHEY_SIMPLEX, 0.5,
+        draw_text_center(paintedFrames[newPaintedFrameId], string(dateTimeChar), Point(4 * line_width, line_height), FONT_HERSHEY_SIMPLEX, 0.5,
                          Scalar(0, 0, 255), 1);
 
         bool red = false;
@@ -532,19 +544,12 @@ void readFrameFromVideoCapture() {
             shutdown();
         }
 
-        draw_text_vertical_center(frame, " Power OFF", Point( 0, height - line_height), FONT_HERSHEY_SIMPLEX, 1,
+        draw_text_vertical_center(paintedFrames[newPaintedFrameId], " Power OFF", Point( 0, height - line_height), FONT_HERSHEY_SIMPLEX, 1,
                          red ? Scalar(0, 0, 255) : Scalar(0, 255, 0), 1);
-
-        int newPaintedFrameId=(paintedFrameId+1)%10;
-        paintedFrames[newPaintedFrameId]=defaultMath.clone();
-        cv::Rect roi( cv::Point( (paintedFrames[newPaintedFrameId].cols-frame.cols)/2, (paintedFrames[newPaintedFrameId].rows-frame.rows)/2 ), frame.size() );
-
-        frame.copyTo(paintedFrames[newPaintedFrameId](roi));
 
 
         paintedFrameId=newPaintedFrameId;
         frameCount++;
-
 
 
         if (frameCount >= 30) {
@@ -626,15 +631,6 @@ int main(int argc, char *argv[]) {
     displayHeight = stoi(argv[4]);
 
     splashScreen = imread("splash.png");
-
-
-
-//    Mat defaultMath(displayHeight,displayWidth, 16,Scalar(0));
-//    paintedFrames[paintedFrameId]=defaultMath.clone();
-//
-//    cv::Rect roi( cv::Point( (paintedFrames[paintedFrameId].cols-splashScreen.cols)/2, (paintedFrames[paintedFrameId].rows-splashScreen.rows)/2 ), splashScreen.size() );
-//    splashScreen.copyTo(paintedFrames[paintedFrameId](roi));
-//    paintedFrames[paintedFrameId]=splashScreen;
 
 
     serialPortAddress = argv[2];
