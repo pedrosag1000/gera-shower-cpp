@@ -122,7 +122,7 @@ int touchId = 0;
 int lastTouchReported = 0;
 string outputBuffer;
 string videoWriterFileFullPath;
-int displayWidth;
+int displayWidth,displayHeight;
 
 void openVideoCapture(bool force = false) {
     while (!videoCapture.isOpened() || force) {
@@ -343,10 +343,12 @@ void writeFrameToVideoWriter() {
 
     }
     int lastFrameId = 0;
+    int diff=0;
     while (pressedKey != 27) {
-        if (lastFrameId != paintedFrameId) {
+        diff = paintedFrameId - lastFrameId;
+        if (diff != 0) {
             videoWriter.write(paintedFrame);
-            lastFrameId = paintedFrameId;
+            lastFrameId += diff;
         } else {
             this_thread::sleep_for(chrono::milliseconds(10));
         }
@@ -371,6 +373,10 @@ void readFrameFromVideoCapture() {
     auto lastTime = currentMS();
     auto nowTime = lastTime;
     int frameCount = 0;
+
+    Mat defaultMath;
+    defaultMath.col(displayWidth);
+    defaultMath.col(displayHeight);
 
     while (pressedKey != 27) {
 
@@ -535,11 +541,10 @@ void readFrameFromVideoCapture() {
 
 
 
-        paintedFrame = frame.clone();
+        paintedFrame=defaultMath.clone();
+        frame.copyTo(paintedFrame.colRange(paintedFrame.cols-frame.cols/2,paintedFrame.cols-frame.cols/2+frame.cols).rowRange(0,paintedFrame.rows));
         paintedFrameId = frameId;
-
-
-
+        
 
 //        if (frameId % 30 == 0) {
 //            cout << " OPENCV FPS " << getTickFrequency() / (getTickCount() - tickCount) << endl;
@@ -610,17 +615,19 @@ int main(int argc, char *argv[]) {
         cout << "You should insert 4 args" << endl
              << "1) Webcam IP (192.168.1.1 or etc)" << endl
              << "2) Serial port address (like: /dev/ttyTHS1 or /dev/ttyS0 or etc)" << endl
-             << "3) Video display width in pixel - this number should be less than webcam width (like 1920 or 1080 or 756 or etc)"
+             << "3) Video display width in pixel (like 1920 or 1280 or 756 or etc)"
+             << "4) Video display height in pixel (like 1080 or 800 or etc)"
              << endl
-             << "4) Video output file full path or false for not save the video (for example: output.mp4 or false) " << endl
+             << "5) Video output file full path or false for not save the video (for example: output.mp4 or false) " << endl
              << "For example:" << endl
-             << "./DisplayImage 192.168.1.100 /dev/ttyTHS2 1920 filename.mp4" << endl;;
+             << "./DisplayImage 192.168.1.100 /dev/ttyTHS2 1920 1080 filename.mp4" << endl;;
         return 1;
     }
 
-    videoWriterFileFullPath = argv[4];
+    videoWriterFileFullPath = argv[5];
 
     displayWidth = stoi(argv[3]);
+    displayHeight = stoi(argv[4]);
 
     splashScreen = imread("splash.png");
 
@@ -632,6 +639,8 @@ int main(int argc, char *argv[]) {
     //namedWindow(" ", WINDOW_OPENGL);
     setMouseCallback(" ", mouseCallback, nullptr);
     setWindowProperty(" ", WND_PROP_FULLSCREEN, WINDOW_FULLSCREEN);
+    HWND hwnd = FindWindow(0, L" ");//get window through Windows API
+    SetClassLongPtr(hwnd, GCLP_HBRBACKGROUND, (LONG) CreateSolidBrush(RGB(0, 0, 0)));//set window background to black; you can change the colour in the RGB()
 
     setVideoCaptureAddressByIP(argv[1]);
 
