@@ -132,8 +132,9 @@ void openVideoCapture(bool force = false) {
         cout.flush();
         waitKey(1000);
         videoCapture.release();
-        if (!videoCaptureAddress.empty())
+        if (!videoCaptureAddress.empty()) {
             videoCapture = VideoCapture(videoCaptureAddress, CAP_GSTREAMER);
+        }
         force = false;
     }
 }
@@ -374,8 +375,9 @@ void readFrameFromVideoCapture() {
     auto nowTime = lastTime;
     int frameCount = 0;
 
-    Mat defaultMath(displayHeight,displayWidth, CV_8U,Scalar(50));
 
+
+    Mat defaultMath(displayHeight,displayWidth, 16,Scalar(50));
     while (pressedKey != 27) {
 
         nowTime = currentMS();
@@ -540,8 +542,10 @@ void readFrameFromVideoCapture() {
 
 
         paintedFrame=defaultMath.clone();
+        cv::Rect roi( cv::Point( 0, 0 ), frame.size() );
+
         //frame.copyTo(paintedFrame.colRange((paintedFrame.cols-frame.cols)/2,(paintedFrame.cols-frame.cols)/2+frame.cols));
-        frame.copyTo(paintedFrame);
+        frame.copyTo(paintedFrame(roi));
 
 
         paintedFrameId = frameId;
