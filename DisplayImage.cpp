@@ -127,7 +127,9 @@ int displayWidth,displayHeight;
 void openVideoCapture(bool force = false) {
     while (!videoCapture.isOpened() || force) {
         cout << "Waiting for camera" << endl;
-        paintedFrames[++paintedFrameId] = splashScreen;
+        int newPaintedFrame=(paintedFrameId+1)%10;
+        paintedFrames[newPaintedFrame] = splashScreen;
+        paintedFrameId=newPaintedFrame;
         waitKey(1000);
         videoCapture.release();
         if (!videoCaptureAddress.empty()) {
