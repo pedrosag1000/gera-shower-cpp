@@ -127,21 +127,18 @@ void openVideoCapture(bool force = false) {
 }
 
 void setVideoCaptureAddressByIP(string ip) {
-
-    cout << "IP Address of video capture: " << ip << endl;
-    if (ip == "192.168.1.90" || ip == "192.168.1.110") {
-        string first = "rtspsrc location=rtsp://admin:Admin1401@";
-        string second = ":554/streaming/channels/101 latency=200 is-live=true drop-on-latency=1 tcp-timeout=1000 teardown-timeout=1000 timeout=1000 ! rtph264depay ! h264parse ! decodebin ! autovideoconvert ! video/x-raw,format=BGRx ! videoconvert ! video/x-raw,format=BGR ! appsink drop=true sync=false";
-        auto tmp = first + ip + second;
-        auto ipTmp = explode(ip, '.');
-        ip1 = stoi(ipTmp[0]);
-        ip2 = stoi(ipTmp[1]);
-        ip3 = stoi(ipTmp[2]);
-        ip4 = stoi(ipTmp[3]);
-        if (tmp != videoCaptureAddress) {
-            videoCapture.release();
-            videoCaptureAddress = tmp;
-        }
+    string first = "rtspsrc location=rtsp://admin:Admin1401@";
+    string second = ":554/streaming/channels/101 latency=200 is-live=true drop-on-latency=1 tcp-timeout=1000 teardown-timeout=1000 timeout=1000 ! rtph264depay ! h264parse ! decodebin ! autovideoconvert ! video/x-raw,format=BGRx ! videoconvert ! video/x-raw,format=BGR ! appsink drop=true sync=false";
+    auto tmp = first + ip + second;
+    auto ipTmp = explode(ip, '.');
+    ip1 = stoi(ipTmp[0]);
+    ip2 = stoi(ipTmp[1]);
+    ip3 = stoi(ipTmp[2]);
+    ip4 = stoi(ipTmp[3]);
+    if (tmp != videoCaptureAddress) {
+        videoCapture.release();
+        videoCaptureAddress = tmp;
+        cout << "New IP Address of video capture: " << ip << endl;
     }
 }
 
@@ -331,7 +328,7 @@ void writeFrameToVideoWriter() {
                 width = (int) (sourceWidth * ratio);
                 height = (int) (sourceHeight * ratio);
             }
-//                cout << "Video writer starting with "<<videoWriterFileFullPath<< " : " << width << "x" << height << endl;
+            cout << "Video writer starting with "<<videoWriterFileFullPath<< " : " << width << "x" << height << endl;
             videoWriter.open(videoWriterFileFullPath, CAP_GSTREAMER, 0, (double) 30, Size(width, height));
             if (!videoWriter.isOpened())
                 this_thread::sleep_for(chrono::milliseconds(1000));
