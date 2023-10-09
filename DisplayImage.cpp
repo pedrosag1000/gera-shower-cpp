@@ -534,6 +534,7 @@ void readFrameFromVideoCapture() {
                          red ? Scalar(0, 0, 255) : Scalar(0, 255, 0), 1);
 
 
+
         paintedFrame = frame.clone();
         paintedFrameId = frameId;
 
@@ -569,10 +570,10 @@ void showFrameToVideoOutput() {
         nowTime = currentMS();
 
         delta = paintedFrameId - frameId;
-        if (delta != 0 || true) {
+        if (delta != 0) {
             frameId += delta;
             frameCount++;
-            if (!paintedFrame.empty()) {
+            if (!paintedFrame.empty() && paintedFrame.cols > 0 && paintedFrame.rows > 0) {
                 try {
                     imshow(" ", paintedFrame);
                 }
