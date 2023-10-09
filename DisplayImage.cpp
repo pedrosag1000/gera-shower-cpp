@@ -542,7 +542,7 @@ void readFrameFromVideoCapture() {
 
 
         paintedFrame=defaultMath.clone();
-        cv::Rect roi( cv::Point( (paintedFrame.cols-frame.cols)/2, (paintedFrame.rows-frame.rows) ), frame.size() );
+        cv::Rect roi( cv::Point( (paintedFrame.cols-frame.cols)/2, (paintedFrame.rows-frame.rows)/2 ), frame.size() );
 
         //frame.copyTo(paintedFrame.colRange(,(paintedFrame.cols-frame.cols)/2+frame.cols));
         frame.copyTo(paintedFrame(roi));
