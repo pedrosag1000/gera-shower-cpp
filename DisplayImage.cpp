@@ -109,7 +109,7 @@ Point touchedPoint(0, 0);
 int touchId = 0;
 int lastTouchReported = 0;
 string outputBuffer;
-string videoWriterAddress;
+string videoWriterFileFullPath;
 int display_width;
 
 void openVideoCapture(bool force = false) {
@@ -278,16 +278,16 @@ void sendAndReceiveDataFromToThread() {
                         to_string(allReadData[startPosition + startIndex + 9]));
 
 
-                cout << "AZIMUTH ENCODER: " << radar_angle << endl;
-                cout << "ELEVATION ENCODER: " << view_angle << endl;
-                cout << "AZIMUTH RETICLE RANGE: " << vertical_angle << endl;
-                cout << "ELEVATION RETICLE RANGE: " << horizental_angle << endl;
-                cout << "ZOOM: " << zoom << endl;
-
-                cout << "IP: " << to_string(allReadData[startPosition + startIndex + 6]) + '.' +
-                                  to_string(allReadData[startPosition + startIndex + 7]) + '.' +
-                                  to_string(allReadData[startPosition + startIndex + 8]) + '.' +
-                                  to_string(allReadData[startPosition + startIndex + 9]) << endl;
+//                cout << "AZIMUTH ENCODER: " << radar_angle << endl;
+//                cout << "ELEVATION ENCODER: " << view_angle << endl;
+//                cout << "AZIMUTH RETICLE RANGE: " << vertical_angle << endl;
+//                cout << "ELEVATION RETICLE RANGE: " << horizental_angle << endl;
+//                cout << "ZOOM: " << zoom << endl;
+//
+//                cout << "IP: " << to_string(allReadData[startPosition + startIndex + 6]) + '.' +
+//                                  to_string(allReadData[startPosition + startIndex + 7]) + '.' +
+//                                  to_string(allReadData[startPosition + startIndex + 8]) + '.' +
+//                                  to_string(allReadData[startPosition + startIndex + 9]) << endl;
 
 
             }
@@ -311,10 +311,14 @@ void sendAndReceiveDataFromToThread() {
 
 void writeFrameToVideoWriter() {
 
-    string filename = "output.mp4";
-    videoWriterAddress =
+    if(videoWriterFileFullPath=="false")
+    {
+        cout<<"Video writer is DISABLED!!!"<<endl;
+        return;
+    }
+    videoWriterFileFullPath =
             "appsrc ! video/x-raw, format=BGR ! queue ! videoconvert ! video/x-raw,format=NV12 ! nvv4l2h265enc ! h265parse ! qtmux ! filesink location=" +
-            filename + " sync=false";
+            videoWriterFileFullPath + " sync=false";
     while (!videoWriter.isOpened()) {
         if (!painted_frame.empty()) {
             int sourceWidth = originalFrame.cols;
@@ -327,8 +331,8 @@ void writeFrameToVideoWriter() {
                 width = (int) (sourceWidth * ratio);
                 height = (int) (sourceHeight * ratio);
             }
-//                cout << "Video writer starting with "<<videoWriterAddress<< " : " << width << "x" << height << endl;
-            videoWriter.open(videoWriterAddress, CAP_GSTREAMER, 0, (double) 30, Size(width, height));
+//                cout << "Video writer starting with "<<videoWriterFileFullPath<< " : " << width << "x" << height << endl;
+            videoWriter.open(videoWriterFileFullPath, CAP_GSTREAMER, 0, (double) 30, Size(width, height));
             if (!videoWriter.isOpened())
                 this_thread::sleep_for(chrono::milliseconds(1000));
             else
@@ -607,13 +611,13 @@ int main(int argc, char *argv[]) {
              << "2) Serial port address (like: /dev/ttyTHS1 or /dev/ttyS0 or etc)" << endl
              << "3) Video display width in pixel - this number should be less than webcam width (like 1920 or 1080 or 756 or etc)"
              << endl
-             << "4) Video output file (for example: output.mp4) " << endl
+             << "4) Video output file full path or false for not save the video (for example: output.mp4 or false) " << endl
              << "For example:" << endl
              << "./DisplayImage 192.168.1.100 /dev/ttyTHS2 1920 filename.mp4" << endl;;
         return 1;
     }
 
-    videoWriterAddress = argv[4];
+    videoWriterFileFullPath = argv[4];
 
     display_width = stoi(argv[3]);
 
