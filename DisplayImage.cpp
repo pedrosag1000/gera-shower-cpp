@@ -314,7 +314,7 @@ void writeFrameToVideoWriter() {
         return;
     }
     videoWriterFileFullPath =
-            "appsrc ! video/x-raw, format=BGR ! queue ! videoconvert ! video/x-raw,format=I420 ! x2654enc ! mp4mux ! filesink location=" +
+            "appsrc ! video/x-raw, format=BGR ! queue ! videoconvert ! video/x-raw,format=I420 ! x264enc ! mp4mux ! filesink location=" +
             videoWriterFileFullPath + " sync=false";
     while (!videoWriter.isOpened()) {
         if (!painted_frame.empty()) {
