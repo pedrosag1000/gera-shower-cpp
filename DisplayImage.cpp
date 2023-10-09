@@ -627,12 +627,12 @@ int main(int argc, char *argv[]) {
 
 
 
-    Mat defaultMath(displayHeight,displayWidth, 16,Scalar(0));
-    paintedFrames[paintedFrameId]=defaultMath.clone();
-
-    cv::Rect roi( cv::Point( (paintedFrames[paintedFrameId].cols-splashScreen.cols)/2, (paintedFrames[paintedFrameId].rows-splashScreen.rows)/2 ), splashScreen.size() );
-    splashScreen.copyTo(paintedFrames[paintedFrameId](roi));
-    paintedFrames[paintedFrameId]=splashScreen;
+//    Mat defaultMath(displayHeight,displayWidth, 16,Scalar(0));
+//    paintedFrames[paintedFrameId]=defaultMath.clone();
+//
+//    cv::Rect roi( cv::Point( (paintedFrames[paintedFrameId].cols-splashScreen.cols)/2, (paintedFrames[paintedFrameId].rows-splashScreen.rows)/2 ), splashScreen.size() );
+//    splashScreen.copyTo(paintedFrames[paintedFrameId](roi));
+//    paintedFrames[paintedFrameId]=splashScreen;
 
 
     serialPortAddress = argv[2];
