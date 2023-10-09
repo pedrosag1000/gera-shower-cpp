@@ -648,6 +648,7 @@ int main(int argc, char *argv[]) {
 
     writerVideoThread.join();
     readFrameFromVideoCaptureThread.join();
+    serialThread.join();
 
 
     return 0;
