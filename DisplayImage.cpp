@@ -610,7 +610,7 @@ void mouseCallback(int event, int x, int y, int flags, void *userdata) {
 
 int main(int argc, char *argv[]) {
 
-    if (argc != 5) {
+    if (argc != 6) {
 
         cout << "You should insert 4 args" << endl
              << "1) Webcam IP (192.168.1.1 or etc)" << endl
@@ -639,7 +639,7 @@ int main(int argc, char *argv[]) {
     //namedWindow(" ", WINDOW_OPENGL);
     setMouseCallback(" ", mouseCallback, nullptr);
     setWindowProperty(" ", WND_PROP_FULLSCREEN, WINDOW_FULLSCREEN);
-    
+
     setVideoCaptureAddressByIP(argv[1]);
 
     cout << "Camera connection is opened" << endl;
