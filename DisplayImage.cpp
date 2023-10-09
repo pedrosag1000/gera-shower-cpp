@@ -59,6 +59,18 @@ draw_text_center(Mat frame, string text, Point center, int fontFace, double font
 
     putText(frame, text, textOrg, fontFace, fontScale, color, thickness);
 }
+void
+draw_text_vertical_center(Mat frame, string text, Point leftAndVerticalCenter, int fontFace, double fontScale, Scalar color, int thickness) {
+    int baseLine = 0;
+    Size textSize = getTextSize(text, fontFace, fontScale, thickness, &baseLine);
+    baseLine += thickness;
+
+    Point textOrg = Point(leftAndVerticalCenter.x , leftAndVerticalCenter.y + textSize.height / 2);
+    // rectangle(frame, textOrg + Point(0, baseLine), textOrg + Point(textSize.width, -textSize.height), color);
+    // line(frame, textOrg + Point(0, thickness), textOrg + Point(textSize.width, thickness), color);
+
+    putText(frame, text, textOrg, fontFace, fontScale, color, thickness);
+}
 
 void
 draw_arch(Mat frame, Point center, int circle_radius, int view_angle, int size_of_angle, Scalar color, int thickness,
@@ -318,7 +330,7 @@ void writeFrameToVideoWriter() {
             videoWriterFileFullPath + " sync=false";
     while (!videoWriter.isOpened()) {
         if (!paintedFrame.empty()) {
-           
+
             cout << "Video writer starting with "<<videoWriterFileFullPath<< " : " << paintedFrame.cols << "x" << paintedFrame.rows << endl;
             videoWriter.open(videoWriterFileFullPath, CAP_GSTREAMER, 0, (double) 30, Size( paintedFrame.cols, paintedFrame.rows));
             if (!videoWriter.isOpened())
@@ -339,6 +351,7 @@ void writeFrameToVideoWriter() {
             this_thread::sleep_for(chrono::milliseconds(10));
         }
     }
+    videoWriter.release();
 }
 
 long currentMS() {
@@ -517,7 +530,7 @@ void readFrameFromVideoCapture() {
             shutdown();
         }
 
-        draw_text_center(frame, "Power OFF", Point(line_width, height - line_height), FONT_HERSHEY_SIMPLEX, 1,
+        draw_text_vertical_center(frame, " Power OFF", Point( 0, height - line_height), FONT_HERSHEY_SIMPLEX, 1,
                          red ? Scalar(0, 0, 255) : Scalar(0, 255, 0), 1);
 
 
@@ -540,7 +553,7 @@ void readFrameFromVideoCapture() {
             frameCount = 0;
         }
     }
-
+    videoCapture.release();
 }
 
 void showFrameToVideoOutput() {
@@ -635,7 +648,7 @@ int main(int argc, char *argv[]) {
 
     writerVideoThread.join();
     readFrameFromVideoCaptureThread.join();
-    videoCapture.release();
-    videoWriter.release();
+
+
     return 0;
 }
