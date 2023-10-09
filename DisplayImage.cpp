@@ -377,7 +377,7 @@ void readFrameFromVideoCapture() {
 
 
 
-    Mat defaultMath(displayHeight,displayWidth, 16,Scalar(50));
+    Mat defaultMath(displayHeight,displayWidth, 16,Scalar(0));
     while (pressedKey != 27) {
 
         nowTime = currentMS();
@@ -542,9 +542,9 @@ void readFrameFromVideoCapture() {
 
 
         paintedFrame=defaultMath.clone();
-        cv::Rect roi( cv::Point( 0, 0 ), frame.size() );
+        cv::Rect roi( cv::Point( (paintedFrame.cols-frame.cols)/2, (paintedFrame.rows-frame.rows) ), frame.size() );
 
-        //frame.copyTo(paintedFrame.colRange((paintedFrame.cols-frame.cols)/2,(paintedFrame.cols-frame.cols)/2+frame.cols));
+        //frame.copyTo(paintedFrame.colRange(,(paintedFrame.cols-frame.cols)/2+frame.cols));
         frame.copyTo(paintedFrame(roi));
 
 
