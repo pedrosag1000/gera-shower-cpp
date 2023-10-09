@@ -374,9 +374,7 @@ void readFrameFromVideoCapture() {
     auto nowTime = lastTime;
     int frameCount = 0;
 
-    Mat defaultMath;
-    defaultMath.col(displayWidth);
-    defaultMath.col(displayHeight);
+    Mat defaultMath(displayHeight,displayWidth, CV_8U,Scalar(50));
 
     while (pressedKey != 27) {
 
@@ -542,7 +540,10 @@ void readFrameFromVideoCapture() {
 
 
         paintedFrame=defaultMath.clone();
-        frame.copyTo(paintedFrame.colRange(paintedFrame.cols-frame.cols/2,paintedFrame.cols-frame.cols/2+frame.cols).rowRange(0,paintedFrame.rows));
+        //frame.copyTo(paintedFrame.colRange((paintedFrame.cols-frame.cols)/2,(paintedFrame.cols-frame.cols)/2+frame.cols));
+        frame.copyTo(paintedFrame);
+
+
         paintedFrameId = frameId;
 
 
