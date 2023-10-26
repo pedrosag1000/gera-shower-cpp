@@ -404,7 +404,7 @@ void readFrameFromVideoCapture() {
         do {
             openVideoCapture(originalFrame.empty());
             videoCapture.read(originalFrame);
-        } while (originalFrame.empty() || pressedKey!=27);
+        } while (originalFrame.empty() && pressedKey!=27);
 
 
         if(pressedKey==27)
