@@ -14,6 +14,14 @@ using namespace std;
 using namespace mn::CppLinuxSerial;
 
 #define PI 3.14159265
+template <typename T>
+std::string to_string_with_precision(const T a_value, const int n = 6)
+{
+    std::ostringstream out;
+    out.precision(n);
+    out << std::fixed << a_value;
+    return std::move(out).str();
+}
 
 int ip1 = 0, ip2 = 0, ip3 = 0, ip4 = 0;
 #define QUEUE_SIZE 10;
@@ -22,7 +30,7 @@ Mat paintedFrames[10];
 double radar_angle = -100, radar_size_of_angle = 20;
 double view_angle = -100, view_size_of_angle = 20;
 double horizental_angle = 60, vertical_angle = 60;
-double zoom = 2.2;
+double zoom = 1.0;
 string serialPortAddress = "";
 
 
@@ -107,7 +115,7 @@ draw_arch(Mat frame, Point center, int circle_radius, int view_angle, int size_o
         diff_x = int(cos((view_angle) / 180.0 * PI) * circle_radius);
         diff_y = int(sin((view_angle) / 180.0 * PI) * circle_radius);
 
-        draw_text_center(frame, to_string(overrideAngle), center + Point(diff_x * 0.8, diff_y * 0.8),
+        draw_text_center(frame, to_string_with_precision(overrideAngle,1), center + Point(diff_x * 0.8, diff_y * 0.8),
                          FONT_HERSHEY_SIMPLEX, fontSize, color, thickness);
     }
 }
@@ -499,10 +507,6 @@ void readFrameFromVideoCapture() {
                 Scalar(0, 0, 255),
                 2, true, 0.4, true, radar_angle);
 
-        // putText(frame,
-        //         to_string(radar_angle < 0 ? 180 + frameId : radar_angle),
-
-        //         circle_center, FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 0, 255), 2);
 
         // Draw view sight
         circle_radius = int(quarter_height / 2);
@@ -529,31 +533,26 @@ void readFrameFromVideoCapture() {
                 Scalar(0, 0, 255),
                 2, true, .7, true, view_angle_temp);
 
-        // putText(frame,
-        //         to_string(view_angle_temp),
-
-        //         circle_center, FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 0, 255), 2);
-
         // show horizental angle
 
-        draw_text_center(paintedFrames[newPaintedFrameId], to_string(horizental_angle / 2),
+        draw_text_center(paintedFrames[newPaintedFrameId], to_string_with_precision(horizental_angle / 2,1),
                          Point(width - line_width, half_height),
                          FONT_HERSHEY_SIMPLEX, .7, Scalar(0, 0, 255), 2);
-        draw_text_center(paintedFrames[newPaintedFrameId], to_string(-horizental_angle / 2),
+        draw_text_center(paintedFrames[newPaintedFrameId], to_string_with_precision(-horizental_angle / 2,1),
                          Point(line_width, half_height), FONT_HERSHEY_SIMPLEX,
                          .7, Scalar(0, 0, 255), 2);
 
         // show vertical angle
-        draw_text_center(paintedFrames[newPaintedFrameId], to_string(vertical_angle / 2),
+        draw_text_center(paintedFrames[newPaintedFrameId], to_string_with_precision(vertical_angle / 2,1),
                          Point(half_width, line_height), FONT_HERSHEY_SIMPLEX, .7,
                          Scalar(0, 0, 255), 2);
-        draw_text_center(paintedFrames[newPaintedFrameId], to_string(-vertical_angle / 2),
+        draw_text_center(paintedFrames[newPaintedFrameId], to_string_with_precision(-vertical_angle / 2,1),
                          Point(half_width, height - line_height),
                          FONT_HERSHEY_SIMPLEX, .7, Scalar(0, 0, 255), 2);
 
         // show zoom
         draw_text_center(paintedFrames[newPaintedFrameId],
-                         to_string((int) zoom) + "." + to_string((int) ((zoom - (int) zoom) / .1) % 10) + "X",
+                         to_string_with_precision(zoom,1) + "X",
                          Point(line_width, line_height), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 0, 255), 2);
 
         draw_text_center(paintedFrames[newPaintedFrameId], string(dateTimeChar), Point(4 * line_width, line_height),
