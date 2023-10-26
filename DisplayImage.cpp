@@ -365,7 +365,7 @@ void writeFrameToVideoWriter() {
 
             cout << "Video writer starting with " << videoWriterFileFullPath << " : "
                  << paintedFrames[paintedFrameId].cols << "x" << paintedFrames[paintedFrameId].rows << endl;
-            videoWriter.open(videoWriterFileFullPath, CAP_GSTREAMER, 0, (double) 30,
+            videoWriter.open(videoWriterFileFullPath, CAP_GSTREAMER, 0, (double) 30 / frameCounter,
                              Size(paintedFrames[paintedFrameId].cols, paintedFrames[paintedFrameId].rows));
             if (!videoWriter.isOpened())
                 this_thread::sleep_for(chrono::milliseconds(1000));
