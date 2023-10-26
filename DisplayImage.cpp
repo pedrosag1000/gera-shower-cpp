@@ -361,11 +361,11 @@ void writeFrameToVideoWriter() {
             "appsrc ! video/x-raw, format=BGR ! queue ! videoconvert ! video/x-raw,format=I420 ! x264enc ! mp4mux ! filesink location=" +
             videoWriterFileFullPath + " sync=false";
     while (!videoWriter.isOpened()) {
-        if (!paintedFrames[paintedFrameId].empty() && frameCounter % videoWriterFrameRatio == 0) {
+        if (!paintedFrames[paintedFrameId].empty()) {
 
             cout << "Video writer starting with " << videoWriterFileFullPath << " : "
                  << paintedFrames[paintedFrameId].cols << "x" << paintedFrames[paintedFrameId].rows << endl;
-            videoWriter.open(videoWriterFileFullPath, CAP_GSTREAMER, 0, (double) 30 / frameCounter,
+            videoWriter.open(videoWriterFileFullPath, CAP_GSTREAMER, 0, (double) 30 / videoWriterFrameRatio,
                              Size(paintedFrames[paintedFrameId].cols, paintedFrames[paintedFrameId].rows));
             if (!videoWriter.isOpened())
                 this_thread::sleep_for(chrono::milliseconds(1000));
@@ -374,16 +374,19 @@ void writeFrameToVideoWriter() {
 
 
         }
-        frameCounter=(frameCounter+1)%videoWriterFrameRatio;
 
     }
     int lastFrameId = 0;
     int diff = 0;
     while (pressedKey != 27) {
         diff = paintedFrameId - lastFrameId;
+
         if (diff != 0) {
             lastFrameId += diff;
-            videoWriter.write(paintedFrames[lastFrameId]);
+            if(frameCounter % videoWriterFrameRatio == 0) {
+                videoWriter.write(paintedFrames[lastFrameId]);
+            }
+            frameCounter=(frameCounter+1)%videoWriterFrameRatio;
         } else {
             this_thread::sleep_for(chrono::milliseconds(10));
         }
