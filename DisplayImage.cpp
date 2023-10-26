@@ -132,9 +132,9 @@ void openVideoCapture(bool force = false) {
         int newPaintedFrame = (paintedFrameId + 1) % 10;
         paintedFrames[newPaintedFrame] = splashScreen;
         paintedFrameId = newPaintedFrame;
+        videoCapture.release();
 
         this_thread::sleep_for(chrono::milliseconds(1000));
-        videoCapture.release();
         if (!videoCaptureAddress.empty()) {
             videoCapture = VideoCapture(videoCaptureAddress, CAP_GSTREAMER);
         }
