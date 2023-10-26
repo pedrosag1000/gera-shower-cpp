@@ -59,13 +59,15 @@ draw_text_center(Mat frame, string text, Point center, int fontFace, double font
 
     putText(frame, text, textOrg, fontFace, fontScale, color, thickness);
 }
+
 void
-draw_text_vertical_center(Mat frame, string text, Point leftAndVerticalCenter, int fontFace, double fontScale, Scalar color, int thickness) {
+draw_text_vertical_center(Mat frame, string text, Point leftAndVerticalCenter, int fontFace, double fontScale,
+                          Scalar color, int thickness) {
     int baseLine = 0;
     Size textSize = getTextSize(text, fontFace, fontScale, thickness, &baseLine);
     baseLine += thickness;
 
-    Point textOrg = Point(leftAndVerticalCenter.x , leftAndVerticalCenter.y + textSize.height / 2);
+    Point textOrg = Point(leftAndVerticalCenter.x, leftAndVerticalCenter.y + textSize.height / 2);
     // rectangle(frame, textOrg + Point(0, baseLine), textOrg + Point(textSize.width, -textSize.height), color);
     // line(frame, textOrg + Point(0, thickness), textOrg + Point(textSize.width, thickness), color);
 
@@ -122,14 +124,14 @@ int touchId = 0;
 int lastTouchReported = 0;
 string outputBuffer;
 string videoWriterFileFullPath;
-int displayWidth,displayHeight;
+int displayWidth, displayHeight;
 
 void openVideoCapture(bool force = false) {
-    while ((!videoCapture.isOpened() || force) && pressedKey !=27) {
+    while ((!videoCapture.isOpened() || force) && pressedKey != 27) {
         cout << "Waiting for camera" << endl;
-        int newPaintedFrame=(paintedFrameId+1)%10;
+        int newPaintedFrame = (paintedFrameId + 1) % 10;
         paintedFrames[newPaintedFrame] = splashScreen;
-        paintedFrameId=newPaintedFrame;
+        paintedFrameId = newPaintedFrame;
 
         this_thread::sleep_for(chrono::milliseconds(1000));
         videoCapture.release();
@@ -195,16 +197,16 @@ void sendAndReceiveDataFromToThread() {
             outputBuffer += (char) 15;
 
 
-            outputBuffer += (char) (radar_angle*10) / 256;
-            outputBuffer += (char) (radar_angle*10) % 256;
-            outputBuffer += (char) ((view_angle + 100)*10) / 256;
-            outputBuffer += (char) ((view_angle + 100)*10) % 256;
+            outputBuffer += (char) (radar_angle * 10) / 256;
+            outputBuffer += (char) (radar_angle * 10) % 256;
+            outputBuffer += (char) ((view_angle + 100) * 10) / 256;
+            outputBuffer += (char) ((view_angle + 100) * 10) % 256;
 
-            outputBuffer += (char) (vertical_angle*10) / 256;
-            outputBuffer += (char) (vertical_angle*10) % 256;
+            outputBuffer += (char) (vertical_angle * 10) / 256;
+            outputBuffer += (char) (vertical_angle * 10) % 256;
 
-            outputBuffer += (char) (horizental_angle*10) / 256;
-            outputBuffer += (char) (horizental_angle*10) % 256;
+            outputBuffer += (char) (horizental_angle * 10) / 256;
+            outputBuffer += (char) (horizental_angle * 10) % 256;
 
             outputBuffer += (char) zoom * 10;
             outputBuffer += (char) ip1;
@@ -254,7 +256,7 @@ void sendAndReceiveDataFromToThread() {
 //        cout << "START:" << (int) startPosition << endl;
 //        cout << "SIZE:" << (int) allReadData.size() << endl;
 //
-        int lengthOfData=20;
+        int lengthOfData = 20;
 
         if (startPosition >= 0 && allReadData.size() >= startPosition + lengthOfData &&
             allReadData[startPosition + 1] == (char) 254 &&
@@ -276,17 +278,20 @@ void sendAndReceiveDataFromToThread() {
                 cout << "checksum is NOT OK !!!!!" << endl;
             } else {
 
-                radar_angle = ((double)(allReadData[startPosition + startIndex] * 256 + allReadData[startPosition + startIndex + 1]))/10;
+                radar_angle = ((double) (allReadData[startPosition + startIndex] * 256 +
+                                         allReadData[startPosition + startIndex + 1])) / 10;
 
 
-                view_angle = ((double)(allReadData[startPosition + startIndex+2] * 256 + allReadData[startPosition + startIndex + 3] - 100))/10;
+                view_angle = ((double) (allReadData[startPosition + startIndex + 2] * 256 +
+                                        allReadData[startPosition + startIndex + 3] - 100)) / 10;
 
 
-                vertical_angle = ((double)(allReadData[startPosition + startIndex+4] * 256 + allReadData[startPosition + startIndex + 5] ))/10;
+                vertical_angle = ((double) (allReadData[startPosition + startIndex + 4] * 256 +
+                                            allReadData[startPosition + startIndex + 5])) / 10;
 
 
-
-                horizental_angle = ((double)(allReadData[startPosition + startIndex+6] * 256 + allReadData[startPosition + startIndex + 7] ))/10;
+                horizental_angle = ((double) (allReadData[startPosition + startIndex + 6] * 256 +
+                                              allReadData[startPosition + startIndex + 7])) / 10;
 
                 zoom = (int) allReadData[startPosition + startIndex + 8] / 10;
 
@@ -331,9 +336,8 @@ void sendAndReceiveDataFromToThread() {
 
 void writeFrameToVideoWriter() {
 
-    if(videoWriterFileFullPath=="false")
-    {
-        cout<<"Video writer is DISABLED!!!"<<endl;
+    if (videoWriterFileFullPath == "false") {
+        cout << "Video writer is DISABLED!!!" << endl;
         return;
     }
     videoWriterFileFullPath =
@@ -342,8 +346,10 @@ void writeFrameToVideoWriter() {
     while (!videoWriter.isOpened()) {
         if (!paintedFrames[paintedFrameId].empty()) {
 
-            cout << "Video writer starting with "<<videoWriterFileFullPath<< " : " << paintedFrames[paintedFrameId].cols << "x" << paintedFrames[paintedFrameId].rows << endl;
-            videoWriter.open(videoWriterFileFullPath, CAP_GSTREAMER, 0, (double) 30, Size( paintedFrames[paintedFrameId].cols, paintedFrames[paintedFrameId].rows));
+            cout << "Video writer starting with " << videoWriterFileFullPath << " : "
+                 << paintedFrames[paintedFrameId].cols << "x" << paintedFrames[paintedFrameId].rows << endl;
+            videoWriter.open(videoWriterFileFullPath, CAP_GSTREAMER, 0, (double) 30,
+                             Size(paintedFrames[paintedFrameId].cols, paintedFrames[paintedFrameId].rows));
             if (!videoWriter.isOpened())
                 this_thread::sleep_for(chrono::milliseconds(1000));
             else
@@ -354,7 +360,7 @@ void writeFrameToVideoWriter() {
 
     }
     int lastFrameId = 0;
-    int diff=0;
+    int diff = 0;
     while (pressedKey != 27) {
         diff = paintedFrameId - lastFrameId;
         if (diff != 0) {
@@ -383,10 +389,10 @@ void readFrameFromVideoCapture() {
 
     auto lastTime = currentMS();
     auto nowTime = lastTime;
-    int frameCount=0;
+    int frameCount = 0;
 
 
-    Mat defaultMath(displayHeight,displayWidth, 16,Scalar(0));
+    Mat defaultMath(displayHeight, displayWidth, 16, Scalar(0));
     while (pressedKey != 27) {
 
         nowTime = currentMS();
@@ -404,7 +410,7 @@ void readFrameFromVideoCapture() {
         int sourceWidth = originalFrame.cols;
         int sourceHeight = originalFrame.rows;
         int width = sourceWidth, height = sourceHeight;
-        int newPaintedFrameId=(paintedFrameId+1)%10;
+        int newPaintedFrameId = (paintedFrameId + 1) % 10;
 
         if (width > displayWidth) {
             ratio = (double) displayWidth / sourceWidth;
@@ -427,16 +433,15 @@ void readFrameFromVideoCapture() {
 
         resize(resized, frame, Size(width, height), INTER_LINEAR);
 
-        paintedFrames[newPaintedFrameId]=defaultMath.clone();
-        cv::Rect roi( cv::Point( (paintedFrames[newPaintedFrameId].cols-frame.cols)/2, (paintedFrames[newPaintedFrameId].rows-frame.rows)/2 ), frame.size() );
+        paintedFrames[newPaintedFrameId] = defaultMath.clone();
+        cv::Rect roi(cv::Point((paintedFrames[newPaintedFrameId].cols - frame.cols) / 2,
+                               (paintedFrames[newPaintedFrameId].rows - frame.rows) / 2), frame.size());
 
         frame.copyTo(paintedFrames[newPaintedFrameId](roi));
 
 
-        width=paintedFrames[newPaintedFrameId].cols;
-        height=paintedFrames[newPaintedFrameId].rows;
-
-
+        width = paintedFrames[newPaintedFrameId].cols;
+        height = paintedFrames[newPaintedFrameId].rows;
 
 
         float half_width = width / 2.0;
@@ -528,22 +533,28 @@ void readFrameFromVideoCapture() {
 
         // show horizental angle
 
-        draw_text_center(paintedFrames[newPaintedFrameId], to_string(horizental_angle / 2), Point(width - line_width, half_height),
+        draw_text_center(paintedFrames[newPaintedFrameId], to_string(horizental_angle / 2),
+                         Point(width - line_width, half_height),
                          FONT_HERSHEY_SIMPLEX, .7, Scalar(0, 0, 255), 2);
-        draw_text_center(paintedFrames[newPaintedFrameId], to_string(-horizental_angle / 2), Point(line_width, half_height), FONT_HERSHEY_SIMPLEX,
+        draw_text_center(paintedFrames[newPaintedFrameId], to_string(-horizental_angle / 2),
+                         Point(line_width, half_height), FONT_HERSHEY_SIMPLEX,
                          .7, Scalar(0, 0, 255), 2);
 
         // show vertical angle
-        draw_text_center(paintedFrames[newPaintedFrameId], to_string(vertical_angle / 2), Point(half_width, line_height), FONT_HERSHEY_SIMPLEX, .7,
+        draw_text_center(paintedFrames[newPaintedFrameId], to_string(vertical_angle / 2),
+                         Point(half_width, line_height), FONT_HERSHEY_SIMPLEX, .7,
                          Scalar(0, 0, 255), 2);
-        draw_text_center(paintedFrames[newPaintedFrameId], to_string(-vertical_angle / 2), Point(half_width, height - line_height),
+        draw_text_center(paintedFrames[newPaintedFrameId], to_string(-vertical_angle / 2),
+                         Point(half_width, height - line_height),
                          FONT_HERSHEY_SIMPLEX, .7, Scalar(0, 0, 255), 2);
 
         // show zoom
-        draw_text_center(paintedFrames[newPaintedFrameId], to_string((int) zoom) + "." + to_string((int) ((zoom - (int) zoom) / .1) % 10) + "X",
+        draw_text_center(paintedFrames[newPaintedFrameId],
+                         to_string((int) zoom) + "." + to_string((int) ((zoom - (int) zoom) / .1) % 10) + "X",
                          Point(line_width, line_height), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 0, 255), 2);
 
-        draw_text_center(paintedFrames[newPaintedFrameId], string(dateTimeChar), Point(4 * line_width, line_height), FONT_HERSHEY_SIMPLEX, 0.5,
+        draw_text_center(paintedFrames[newPaintedFrameId], string(dateTimeChar), Point(4 * line_width, line_height),
+                         FONT_HERSHEY_SIMPLEX, 0.5,
                          Scalar(0, 0, 255), 1);
 
         bool red = false;
@@ -554,11 +565,12 @@ void readFrameFromVideoCapture() {
             shutdown();
         }
 
-        draw_text_vertical_center(paintedFrames[newPaintedFrameId], " Power OFF", Point( 0, height - line_height), FONT_HERSHEY_SIMPLEX, .8f,
-                         red ? Scalar(0, 0, 255) : Scalar(0, 255, 0), 1);
+        draw_text_vertical_center(paintedFrames[newPaintedFrameId], " Power OFF", Point(0, height - line_height),
+                                  FONT_HERSHEY_SIMPLEX, .8f,
+                                  red ? Scalar(0, 0, 255) : Scalar(0, 255, 0), 1);
 
 
-        paintedFrameId=newPaintedFrameId;
+        paintedFrameId = newPaintedFrameId;
         frameCount++;
 
 
@@ -605,7 +617,7 @@ void showFrameToVideoOutput() {
             lastTime = nowTime;
         }
         pressedKey = waitKey(25);
-
+        cout << pressedKey << endl;
     }
 }
 
@@ -629,7 +641,8 @@ int main(int argc, char *argv[]) {
              << "3) Video display width in pixel (like 1920 or 1280 or 756 or etc)"
              << "4) Video display height in pixel (like 1080 or 800 or etc)"
              << endl
-             << "5) Video output file full path or false for not save the video (for example: output.mp4 or false) " << endl
+             << "5) Video output file full path or false for not save the video (for example: output.mp4 or false) "
+             << endl
              << "For example:" << endl
              << "./DisplayImage 192.168.1.100 /dev/ttyTHS2 1920 1080 filename.mp4" << endl;;
         return 1;
@@ -666,8 +679,11 @@ int main(int argc, char *argv[]) {
     showFrameToVideoOutput();
 
 
+    cout<<"Join the Video thread"<<endl;
     writerVideoThread.join();
+    cout<<"Join on the read thread"<<endl;
     readFrameFromVideoCaptureThread.join();
+    cout<<"Join on the serial thread"<<endl;
     serialThread.join();
 
 
