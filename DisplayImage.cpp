@@ -140,7 +140,6 @@ void openVideoCapture(bool force = false) {
         }
         force = false;
     }
-    cout << "New Camera Opened"<<endl;
 }
 
 void setVideoCaptureAddressByIP(string ip) {
