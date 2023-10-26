@@ -307,7 +307,7 @@ void sendAndReceiveDataFromToThread() {
                 elevationReticleRange = ((double) (allReadData[startPosition + startIndex + 6] * 256 +
                                                    allReadData[startPosition + startIndex + 7])) / 10;
 
-                zoom = (int) allReadData[startPosition + startIndex + 8] / 10;
+                zoom = (double)allReadData[startPosition + startIndex + 8] / 10;
 
 
                 setVideoCaptureAddressByIP(
