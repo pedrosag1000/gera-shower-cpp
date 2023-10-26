@@ -404,8 +404,11 @@ void readFrameFromVideoCapture() {
         do {
             openVideoCapture(originalFrame.empty());
             videoCapture.read(originalFrame);
-        } while (originalFrame.empty());
+        } while (originalFrame.empty() || pressedKey!=27);
 
+
+        if(pressedKey==27)
+            continue;
 
         int sourceWidth = originalFrame.cols;
         int sourceHeight = originalFrame.rows;
@@ -617,7 +620,6 @@ void showFrameToVideoOutput() {
             lastTime = nowTime;
         }
         pressedKey = waitKey(25);
-        cout << pressedKey << endl;
     }
 }
 
