@@ -125,7 +125,7 @@ string videoWriterFileFullPath;
 int displayWidth,displayHeight;
 
 void openVideoCapture(bool force = false) {
-    while (!videoCapture.isOpened() || force) {
+    while ((!videoCapture.isOpened() || force) && pressedKey !=27) {
         cout << "Waiting for camera" << endl;
         int newPaintedFrame=(paintedFrameId+1)%10;
         paintedFrames[newPaintedFrame] = splashScreen;
