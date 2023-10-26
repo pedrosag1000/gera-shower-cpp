@@ -188,11 +188,95 @@ void sendAndReceiveDataFromToThread() {
     bool isDataStarted = false;
     int startPosition = -1, serialLength = 0;
 
+    bool newData=false;
     while (pressedKey != 27) {
+
         readData.clear();
         serialPort.Read(readData);
 
-        if (lastTouchReported != touchId || paintedFrameId % 10 == 0) {
+
+
+        allReadData.append(readData);
+
+//        cout << "ALIVE " << endl;
+
+        startPosition = allReadData.find(startChar);
+//
+//
+//        cout << "START:" << (int) startPosition << endl;
+//        cout << "SIZE:" << (int) allReadData.size() << endl;
+//
+        int lengthOfData = 20;
+
+        if (startPosition >= 0 && allReadData.size() >= startPosition + lengthOfData &&
+            allReadData[startPosition + 1] == (char) 254 &&
+            allReadData[startPosition + 2] == (char) 18 &&
+            allReadData[startPosition + 3] == (char) 5 &&
+            allReadData[startPosition + 4] == (char) 2 &&
+            //length
+            allReadData[startPosition + 5] == (char) 14) {
+
+            newData=true;
+            int startIndex = 6;
+
+
+            int checksum = 0;
+            for (int i = startIndex; i < lengthOfData-1; i++) {
+                checksum += allReadData[i];
+            }
+
+            if (checksum % 256 == allReadData[lengthOfData-1]) {
+                cout << "checksum is NOT OK !!!!!" << endl;
+            } else {
+
+                azimuthEncoder = ((double) (allReadData[startPosition + startIndex] * 256 +
+                                            allReadData[startPosition + startIndex + 1])) / 10;
+
+
+                elevationEncoder = ((double) (allReadData[startPosition + startIndex + 2] * 256 +
+                                              allReadData[startPosition + startIndex + 3])) / 10 - 100;
+
+
+                azimuthReticleRange = ((double) (allReadData[startPosition + startIndex + 4] * 256 +
+                                                 allReadData[startPosition + startIndex + 5])) / 10;
+
+
+                elevationReticleRange = ((double) (allReadData[startPosition + startIndex + 6] * 256 +
+                                                   allReadData[startPosition + startIndex + 7])) / 10;
+
+                zoom = (double)allReadData[startPosition + startIndex + 8] / 10;
+
+
+                setVideoCaptureAddressByIP(
+                        to_string(allReadData[startPosition + startIndex + 9]) + '.' +
+                        to_string(allReadData[startPosition + startIndex + 10]) + '.' +
+                        to_string(allReadData[startPosition + startIndex + 11]) + '.' +
+                        to_string(allReadData[startPosition + startIndex + 12]));
+
+
+//                cout << "AZIMUTH ENCODER: " << azimuthEncoder << endl;
+//                cout << "ELEVATION ENCODER: " << elevationEncoder << endl;
+//                cout << "AZIMUTH RETICLE RANGE: " << azimuthReticleRange << endl;
+//                cout << "ELEVATION RETICLE RANGE: " << elevationReticleRange << endl;
+//                cout << "ZOOM: " << zoom << endl;
+////
+//                cout << "IP: " << to_string(allReadData[startPosition + startIndex + 9]) + '.' +
+//                                  to_string(allReadData[startPosition + startIndex + 10]) + '.' +
+//                                  to_string(allReadData[startPosition + startIndex + 11]) + '.' +
+//                                  to_string(allReadData[startPosition + startIndex + 12]) << endl;
+
+
+            }
+            allReadData.erase(0, startPosition + lengthOfData);
+
+        } else {
+            if (allReadData.size() > 1) {
+                allReadData.erase(0, startPosition + 1);
+            }
+        }
+
+        if (lastTouchReported != touchId || newData) {
+            newData=false;
             outputBuffer = "";
             int checksum = 0;
             //start flags
@@ -260,84 +344,6 @@ void sendAndReceiveDataFromToThread() {
             lastTouchReported = touchId;
         }
 
-        allReadData.append(readData);
-
-//        cout << "ALIVE " << endl;
-
-        startPosition = allReadData.find(startChar);
-//
-//
-//        cout << "START:" << (int) startPosition << endl;
-//        cout << "SIZE:" << (int) allReadData.size() << endl;
-//
-        int lengthOfData = 20;
-
-        if (startPosition >= 0 && allReadData.size() >= startPosition + lengthOfData &&
-            allReadData[startPosition + 1] == (char) 254 &&
-            allReadData[startPosition + 2] == (char) 18 &&
-            allReadData[startPosition + 3] == (char) 5 &&
-            allReadData[startPosition + 4] == (char) 2 &&
-            //length
-            allReadData[startPosition + 5] == (char) 14) {
-
-
-            int startIndex = 6;
-
-
-            int checksum = 0;
-            for (int i = startIndex; i < lengthOfData-1; i++) {
-                checksum += allReadData[i];
-            }
-
-            if (checksum % 256 == allReadData[lengthOfData-1]) {
-                cout << "checksum is NOT OK !!!!!" << endl;
-            } else {
-
-                azimuthEncoder = ((double) (allReadData[startPosition + startIndex] * 256 +
-                                            allReadData[startPosition + startIndex + 1])) / 10;
-
-
-                elevationEncoder = ((double) (allReadData[startPosition + startIndex + 2] * 256 +
-                                              allReadData[startPosition + startIndex + 3])) / 10 - 100;
-
-
-                azimuthReticleRange = ((double) (allReadData[startPosition + startIndex + 4] * 256 +
-                                                 allReadData[startPosition + startIndex + 5])) / 10;
-
-
-                elevationReticleRange = ((double) (allReadData[startPosition + startIndex + 6] * 256 +
-                                                   allReadData[startPosition + startIndex + 7])) / 10;
-
-                zoom = (double)allReadData[startPosition + startIndex + 8] / 10;
-
-
-                setVideoCaptureAddressByIP(
-                        to_string(allReadData[startPosition + startIndex + 9]) + '.' +
-                        to_string(allReadData[startPosition + startIndex + 10]) + '.' +
-                        to_string(allReadData[startPosition + startIndex + 11]) + '.' +
-                        to_string(allReadData[startPosition + startIndex + 12]));
-
-
-//                cout << "AZIMUTH ENCODER: " << azimuthEncoder << endl;
-//                cout << "ELEVATION ENCODER: " << elevationEncoder << endl;
-//                cout << "AZIMUTH RETICLE RANGE: " << azimuthReticleRange << endl;
-//                cout << "ELEVATION RETICLE RANGE: " << elevationReticleRange << endl;
-//                cout << "ZOOM: " << zoom << endl;
-////
-//                cout << "IP: " << to_string(allReadData[startPosition + startIndex + 9]) + '.' +
-//                                  to_string(allReadData[startPosition + startIndex + 10]) + '.' +
-//                                  to_string(allReadData[startPosition + startIndex + 11]) + '.' +
-//                                  to_string(allReadData[startPosition + startIndex + 12]) << endl;
-
-
-            }
-            allReadData.erase(0, startPosition + lengthOfData);
-
-        } else {
-            if (allReadData.size() > 1) {
-                allReadData.erase(0, startPosition + 1);
-            }
-        }
 
         if (allReadData.size() > 100) {
             this_thread::sleep_for(chrono::milliseconds(10));
