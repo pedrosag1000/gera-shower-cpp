@@ -19,10 +19,10 @@ int ip1 = 0, ip2 = 0, ip3 = 0, ip4 = 0;
 #define QUEUE_SIZE 10;
 Mat paintedFrames[10];
 
-int radar_angle = -100, radar_size_of_angle = 20;
-int view_angle = -100, view_size_of_angle = 20;
-int horizental_angle = 60, vertical_angle = 60;
-double zoom = 1;
+double radar_angle = -100, radar_size_of_angle = 20;
+double view_angle = -100, view_size_of_angle = 20;
+double horizental_angle = 60, vertical_angle = 60;
+double zoom = 2.2;
 string serialPortAddress = "";
 
 
@@ -194,11 +194,17 @@ void sendAndReceiveDataFromToThread() {
             outputBuffer += (char) 15;
 
 
-            outputBuffer += (char) radar_angle / 256;
-            outputBuffer += (char) radar_angle % 256;
-            outputBuffer += (char) view_angle + 100;
-            outputBuffer += (char) vertical_angle;
-            outputBuffer += (char) horizental_angle;
+            outputBuffer += (char) (radar_angle*10) / 256;
+            outputBuffer += (char) (radar_angle*10) % 256;
+            outputBuffer += (char) ((view_angle + 100)*10) / 256;
+            outputBuffer += (char) ((view_angle + 100)*10) % 256;
+
+            outputBuffer += (char) (vertical_angle*10) / 256;
+            outputBuffer += (char) (vertical_angle*10) % 256;
+
+            outputBuffer += (char) (horizental_angle*10) / 256;
+            outputBuffer += (char) (horizental_angle*10) % 256;
+
             outputBuffer += (char) zoom * 10;
             outputBuffer += (char) ip1;
             outputBuffer += (char) ip2;
@@ -247,8 +253,9 @@ void sendAndReceiveDataFromToThread() {
 //        cout << "START:" << (int) startPosition << endl;
 //        cout << "SIZE:" << (int) allReadData.size() << endl;
 //
+        int lengthOfData=20;
 
-        if (startPosition >= 0 && allReadData.size() >= startPosition + 17 &&
+        if (startPosition >= 0 && allReadData.size() >= startPosition + lengthOfData &&
             allReadData[startPosition + 1] == (char) 254 &&
             allReadData[startPosition + 2] == (char) 18 &&
             allReadData[startPosition + 3] == (char) 5 &&
@@ -268,24 +275,26 @@ void sendAndReceiveDataFromToThread() {
                 cout << "checksum is NOT OK !!!!!" << endl;
             } else {
 
-                radar_angle =
-                        allReadData[startPosition + startIndex] * 256 + allReadData[startPosition + startIndex + 1];
+                radar_angle = ((double)(allReadData[startPosition + startIndex] * 256 + allReadData[startPosition + startIndex + 1]))/10;
 
 
-                view_angle = (int) allReadData[startPosition + startIndex + 2] - 100;
+                view_angle = ((double)(allReadData[startPosition + startIndex+2] * 256 + allReadData[startPosition + startIndex + 3] - 100))/10;
 
-                vertical_angle = (int) allReadData[startPosition + startIndex + 3];
 
-                horizental_angle = (int) allReadData[startPosition + startIndex + 4];
+                vertical_angle = ((double)(allReadData[startPosition + startIndex+4] * 256 + allReadData[startPosition + startIndex + 5] ))/10;
 
-                zoom = (int) allReadData[startPosition + startIndex + 5] / 10;
+
+
+                horizental_angle = ((double)(allReadData[startPosition + startIndex+6] * 256 + allReadData[startPosition + startIndex + 7] ))/10;
+
+                zoom = (int) allReadData[startPosition + startIndex + 8] / 10;
 
 
                 setVideoCaptureAddressByIP(
-                        to_string(allReadData[startPosition + startIndex + 6]) + '.' +
-                        to_string(allReadData[startPosition + startIndex + 7]) + '.' +
-                        to_string(allReadData[startPosition + startIndex + 8]) + '.' +
-                        to_string(allReadData[startPosition + startIndex + 9]));
+                        to_string(allReadData[startPosition + startIndex + 9]) + '.' +
+                        to_string(allReadData[startPosition + startIndex + 10]) + '.' +
+                        to_string(allReadData[startPosition + startIndex + 11]) + '.' +
+                        to_string(allReadData[startPosition + startIndex + 12]));
 
 
 //                cout << "AZIMUTH ENCODER: " << radar_angle << endl;
@@ -301,7 +310,7 @@ void sendAndReceiveDataFromToThread() {
 
 
             }
-            allReadData.erase(0, startPosition + 17);
+            allReadData.erase(0, startPosition + lengthOfData);
 
         } else {
             if (allReadData.size() > 1) {
@@ -544,7 +553,7 @@ void readFrameFromVideoCapture() {
             shutdown();
         }
 
-        draw_text_vertical_center(paintedFrames[newPaintedFrameId], " Power OFF", Point( 0, height - line_height), FONT_HERSHEY_SIMPLEX, 1,
+        draw_text_vertical_center(paintedFrames[newPaintedFrameId], " Power OFF", Point( 0, height - line_height), FONT_HERSHEY_SIMPLEX, .8f,
                          red ? Scalar(0, 0, 255) : Scalar(0, 255, 0), 1);
 
 
