@@ -132,6 +132,7 @@ int touchId = 0;
 int lastTouchReported = 0;
 string outputBuffer;
 string videoWriterFileFullPath;
+int videoWriterFrameRatio=1;
 int displayWidth, displayHeight;
 
 void openVideoCapture(bool force = false) {
@@ -350,6 +351,8 @@ void sendAndReceiveDataFromToThread() {
 
 void writeFrameToVideoWriter() {
 
+    int frameCounter=0;
+
     if (videoWriterFileFullPath == "false") {
         cout << "Video writer is DISABLED!!!" << endl;
         return;
@@ -358,7 +361,7 @@ void writeFrameToVideoWriter() {
             "appsrc ! video/x-raw, format=BGR ! queue ! videoconvert ! video/x-raw,format=I420 ! x264enc ! mp4mux ! filesink location=" +
             videoWriterFileFullPath + " sync=false";
     while (!videoWriter.isOpened()) {
-        if (!paintedFrames[paintedFrameId].empty()) {
+        if (!paintedFrames[paintedFrameId].empty() && frameCounter % videoWriterFrameRatio == 0) {
 
             cout << "Video writer starting with " << videoWriterFileFullPath << " : "
                  << paintedFrames[paintedFrameId].cols << "x" << paintedFrames[paintedFrameId].rows << endl;
@@ -371,6 +374,7 @@ void writeFrameToVideoWriter() {
 
 
         }
+        frameCounter=(frameCounter+1)%videoWriterFrameRatio;
 
     }
     int lastFrameId = 0;
@@ -640,7 +644,7 @@ void mouseCallback(int event, int x, int y, int flags, void *userdata) {
 
 int main(int argc, char *argv[]) {
 
-    if (argc != 6) {
+    if (argc != 7) {
 
         cout << "You should insert 4 args" << endl
              << "1) Webcam IP (192.168.1.1 or etc)" << endl
@@ -649,19 +653,21 @@ int main(int argc, char *argv[]) {
              << "4) Video display height in pixel (like 1080 or 800 or etc)"
              << endl
              << "5) Video output file full path or false for not save the video (for example: output.mp4 or false) "
+             << "6) Frame ratio for writing (1 means 1 to 1 and 2 means writer 1 frame on every 2 frame ) "
              << endl
              << "For example:" << endl
-             << "./DisplayImage 192.168.1.100 /dev/ttyTHS2 1920 1080 filename.mp4" << endl;;
+             << "./DisplayImage 192.168.1.100 /dev/ttyTHS2 1920 1080 filename.mp4 30" << endl;;
         return 1;
     }
 
     videoWriterFileFullPath = argv[5];
 
+    videoWriterFrameRatio= stoi(argv[6]);
+
     displayWidth = stoi(argv[3]);
     displayHeight = stoi(argv[4]);
 
     splashScreen = imread("splash.png");
-
 
     serialPortAddress = argv[2];
 
