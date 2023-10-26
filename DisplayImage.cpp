@@ -27,9 +27,9 @@ int ip1 = 0, ip2 = 0, ip3 = 0, ip4 = 0;
 #define QUEUE_SIZE 10;
 Mat paintedFrames[10];
 
-double radar_angle = -100, radar_size_of_angle = 20;
-double view_angle = -100, view_size_of_angle = 20;
-double horizental_angle = 60, vertical_angle = 60;
+double azimuthEncoder = -100, radar_size_of_angle = 20;
+double elevationEncoder = -100, view_size_of_angle = 20;
+double elevationReticleRange = 60, azimuthReticleRange = 60;
 double zoom = 1.0;
 string serialPortAddress = "";
 
@@ -168,7 +168,6 @@ void setVideoCaptureAddressByIP(string ip) {
 
 
 void sendAndReceiveDataFromToThread() {
-
     // Create serial port object and open serial port at 57600 buad, 8 data bits, no parity bit, one stop bit (8n1),
     // and no flow control
     SerialPort serialPort = SerialPort(serialPortAddress, BaudRate::B_115200, NumDataBits::EIGHT, Parity::NONE,
@@ -202,19 +201,20 @@ void sendAndReceiveDataFromToThread() {
             outputBuffer += (char) 18;
             outputBuffer += (char) 5;
             outputBuffer += (char) 2;
-            outputBuffer += (char) 15;
+            outputBuffer += (char) 18;
 
 
-            outputBuffer += (char) (radar_angle * 10) / 256;
-            outputBuffer += (char) (radar_angle * 10) % 256;
-            outputBuffer += (char) ((view_angle + 100) * 10) / 256;
-            outputBuffer += (char) ((view_angle + 100) * 10) % 256;
+            outputBuffer += (char) (azimuthEncoder * 10) / 256;
+            outputBuffer += (char) (azimuthEncoder * 10) % 256;
 
-            outputBuffer += (char) (vertical_angle * 10) / 256;
-            outputBuffer += (char) (vertical_angle * 10) % 256;
+            outputBuffer += (char) ((elevationEncoder  * 10)+100) / 256;
+            outputBuffer += (char) ((elevationEncoder  * 10)+100) % 256;
 
-            outputBuffer += (char) (horizental_angle * 10) / 256;
-            outputBuffer += (char) (horizental_angle * 10) % 256;
+            outputBuffer += (char) (azimuthReticleRange * 10) / 256;
+            outputBuffer += (char) (azimuthReticleRange * 10) % 256;
+
+            outputBuffer += (char) (elevationReticleRange * 10) / 256;
+            outputBuffer += (char) (elevationReticleRange * 10) % 256;
 
             outputBuffer += (char) zoom * 10;
             outputBuffer += (char) ip1;
@@ -228,11 +228,16 @@ void sendAndReceiveDataFromToThread() {
             outputBuffer += (char) touchedPoint.y / 256;
             outputBuffer += (char) touchedPoint.y % 256;
 
-            checksum += (char) radar_angle / 256;
-            checksum += (char) radar_angle % 256;
-            checksum += (char) view_angle + 100;
-            checksum += (char) vertical_angle;
-            checksum += (char) horizental_angle;
+            checksum += (char) (azimuthEncoder * 10) / 256;
+            checksum += (char) (azimuthEncoder * 10) % 256;
+            checksum += (char) ((elevationEncoder  * 10)+100) / 256;
+            checksum += (char) ((elevationEncoder  * 10)+100) % 256;
+
+            checksum += (char) (azimuthReticleRange * 10) / 256;
+            checksum += (char) (azimuthReticleRange * 10) % 256;
+
+            checksum += (char) (elevationReticleRange * 10) / 256;
+            checksum += (char) (elevationReticleRange * 10) % 256;
             checksum += (char) zoom * 10;
             checksum += (char) ip1;
             checksum += (char) ip2;
@@ -271,35 +276,36 @@ void sendAndReceiveDataFromToThread() {
             allReadData[startPosition + 2] == (char) 18 &&
             allReadData[startPosition + 3] == (char) 5 &&
             allReadData[startPosition + 4] == (char) 2 &&
-            allReadData[startPosition + 5] == (char) 11) {
+            //length
+            allReadData[startPosition + 5] == (char) 14) {
 
 
             int startIndex = 6;
 
 
             int checksum = 0;
-            for (int i = startIndex; i < 17; i++) {
+            for (int i = startIndex; i < lengthOfData-1; i++) {
                 checksum += allReadData[i];
             }
 
-            if (checksum % 256 == allReadData[16]) {
+            if (checksum % 256 == allReadData[lengthOfData-1]) {
                 cout << "checksum is NOT OK !!!!!" << endl;
             } else {
 
-                radar_angle = ((double) (allReadData[startPosition + startIndex] * 256 +
-                                         allReadData[startPosition + startIndex + 1])) / 10;
+                azimuthEncoder = ((double) (allReadData[startPosition + startIndex] * 256 +
+                                            allReadData[startPosition + startIndex + 1])) / 10;
 
 
-                view_angle = ((double) (allReadData[startPosition + startIndex + 2] * 256 +
-                                        allReadData[startPosition + startIndex + 3] - 100)) / 10;
+                elevationEncoder = ((double) (allReadData[startPosition + startIndex + 2] * 256 +
+                                              allReadData[startPosition + startIndex + 3])) / 10 - 100;
 
 
-                vertical_angle = ((double) (allReadData[startPosition + startIndex + 4] * 256 +
-                                            allReadData[startPosition + startIndex + 5])) / 10;
+                azimuthReticleRange = ((double) (allReadData[startPosition + startIndex + 4] * 256 +
+                                                 allReadData[startPosition + startIndex + 5])) / 10;
 
 
-                horizental_angle = ((double) (allReadData[startPosition + startIndex + 6] * 256 +
-                                              allReadData[startPosition + startIndex + 7])) / 10;
+                elevationReticleRange = ((double) (allReadData[startPosition + startIndex + 6] * 256 +
+                                                   allReadData[startPosition + startIndex + 7])) / 10;
 
                 zoom = (int) allReadData[startPosition + startIndex + 8] / 10;
 
@@ -311,10 +317,10 @@ void sendAndReceiveDataFromToThread() {
                         to_string(allReadData[startPosition + startIndex + 12]));
 
 
-//                cout << "AZIMUTH ENCODER: " << radar_angle << endl;
-//                cout << "ELEVATION ENCODER: " << view_angle << endl;
-//                cout << "AZIMUTH RETICLE RANGE: " << vertical_angle << endl;
-//                cout << "ELEVATION RETICLE RANGE: " << horizental_angle << endl;
+//                cout << "AZIMUTH ENCODER: " << azimuthEncoder << endl;
+//                cout << "ELEVATION ENCODER: " << elevationEncoder << endl;
+//                cout << "AZIMUTH RETICLE RANGE: " << azimuthReticleRange << endl;
+//                cout << "ELEVATION RETICLE RANGE: " << elevationReticleRange << endl;
 //                cout << "ZOOM: " << zoom << endl;
 //
 //                cout << "IP: " << to_string(allReadData[startPosition + startIndex + 6]) + '.' +
@@ -502,10 +508,10 @@ void readFrameFromVideoCapture() {
                 circle_center,
                 circle_radius,
                 // -90 is for start angle from top of the circle not the right angle of it
-                (radar_angle < 0 ? (180 + paintedFrameId) : radar_angle) - 90,
+                (azimuthEncoder < 0 ? (180 + paintedFrameId) : azimuthEncoder) - 90,
                 radar_size_of_angle,
                 Scalar(0, 0, 255),
-                2, true, 0.4, true, radar_angle);
+                2, true, 0.4, true, azimuthEncoder);
 
 
         // Draw view sight
@@ -521,7 +527,7 @@ void readFrameFromVideoCapture() {
                 Scalar(0, 255, 0),
                 1);
 
-        int view_angle_temp = view_angle < -90 ? (paintedFrameId / 10 % 100) - 10 : view_angle;
+        int view_angle_temp = elevationEncoder < -90 ? (paintedFrameId / 10 % 100) - 10 : elevationEncoder;
         view_angle_temp = ((view_angle_temp + 10) % 90) - 10;
 
         draw_arch(
@@ -535,18 +541,18 @@ void readFrameFromVideoCapture() {
 
         // show horizental angle
 
-        draw_text_center(paintedFrames[newPaintedFrameId], to_string_with_precision(horizental_angle / 2,1),
+        draw_text_center(paintedFrames[newPaintedFrameId], to_string_with_precision(elevationReticleRange / 2, 1),
                          Point(width - line_width, half_height),
                          FONT_HERSHEY_SIMPLEX, .7, Scalar(0, 0, 255), 2);
-        draw_text_center(paintedFrames[newPaintedFrameId], to_string_with_precision(-horizental_angle / 2,1),
+        draw_text_center(paintedFrames[newPaintedFrameId], to_string_with_precision(-elevationReticleRange / 2, 1),
                          Point(line_width, half_height), FONT_HERSHEY_SIMPLEX,
                          .7, Scalar(0, 0, 255), 2);
 
         // show vertical angle
-        draw_text_center(paintedFrames[newPaintedFrameId], to_string_with_precision(vertical_angle / 2,1),
+        draw_text_center(paintedFrames[newPaintedFrameId], to_string_with_precision(azimuthReticleRange / 2, 1),
                          Point(half_width, line_height), FONT_HERSHEY_SIMPLEX, .7,
                          Scalar(0, 0, 255), 2);
-        draw_text_center(paintedFrames[newPaintedFrameId], to_string_with_precision(-vertical_angle / 2,1),
+        draw_text_center(paintedFrames[newPaintedFrameId], to_string_with_precision(-azimuthReticleRange / 2, 1),
                          Point(half_width, height - line_height),
                          FONT_HERSHEY_SIMPLEX, .7, Scalar(0, 0, 255), 2);
 
