@@ -317,16 +317,16 @@ void sendAndReceiveDataFromToThread() {
                         to_string(allReadData[startPosition + startIndex + 12]));
 
 
-//                cout << "AZIMUTH ENCODER: " << azimuthEncoder << endl;
-//                cout << "ELEVATION ENCODER: " << elevationEncoder << endl;
-//                cout << "AZIMUTH RETICLE RANGE: " << azimuthReticleRange << endl;
-//                cout << "ELEVATION RETICLE RANGE: " << elevationReticleRange << endl;
-//                cout << "ZOOM: " << zoom << endl;
+                cout << "AZIMUTH ENCODER: " << azimuthEncoder << endl;
+                cout << "ELEVATION ENCODER: " << elevationEncoder << endl;
+                cout << "AZIMUTH RETICLE RANGE: " << azimuthReticleRange << endl;
+                cout << "ELEVATION RETICLE RANGE: " << elevationReticleRange << endl;
+                cout << "ZOOM: " << zoom << endl;
 //
-//                cout << "IP: " << to_string(allReadData[startPosition + startIndex + 6]) + '.' +
-//                                  to_string(allReadData[startPosition + startIndex + 7]) + '.' +
-//                                  to_string(allReadData[startPosition + startIndex + 8]) + '.' +
-//                                  to_string(allReadData[startPosition + startIndex + 9]) << endl;
+                cout << "IP: " << to_string(allReadData[startPosition + startIndex + 6]) + '.' +
+                                  to_string(allReadData[startPosition + startIndex + 7]) + '.' +
+                                  to_string(allReadData[startPosition + startIndex + 8]) + '.' +
+                                  to_string(allReadData[startPosition + startIndex + 9]) << endl;
 
 
             }
