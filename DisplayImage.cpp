@@ -481,8 +481,8 @@ void readFrameFromVideoCapture() {
         if (sourceWidth != originalFrame.cols || sourceHeight != originalFrame.rows) {
             sourceWidth = originalFrame.cols;
             sourceHeight = originalFrame.rows;
-            width = sourceWidth;
-            height = sourceHeight;
+            width = displayHeight;
+            height = displayHeight;
 
             if (width > displayWidth || height > displayHeight) {
                 ratio = MIN(
