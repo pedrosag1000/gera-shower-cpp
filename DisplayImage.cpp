@@ -458,7 +458,7 @@ void readFrameFromVideoCapture() {
     // Draw radar circle on right top
 
     Point circle_center, elevationCircleCenter, powerOffLocation;
-    Size powerOfSize;
+    Size powerOffSize;
 
     Mat frame;
 
