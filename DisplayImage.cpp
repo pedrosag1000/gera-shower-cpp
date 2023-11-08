@@ -28,7 +28,7 @@ int ip1 = 0, ip2 = 0, ip3 = 0, ip4 = 0;
 Mat paintedFrames[10];
 
 double azimuthEncoder = -100, radar_size_of_angle = 20;
-double elevationEncoder = -100, view_size_of_angle = 20;
+double elevationEncoder = 50, view_size_of_angle = 20;
 double elevationReticleRange = 60, azimuthReticleRange = 60;
 double zoom = 1.0, realZoom = 1.0;
 int errorFlag=0;
@@ -646,25 +646,25 @@ void readFrameFromVideoCapture() {
         if(newPaintedFrameId / 5 % 2 == 0) {
             switch (errorFlag) {
                 case 1:
-                    draw_text_center(paintedFrames[newPaintedFrameId], "EMERGENCY", Point(15 * line_width, line_height),
+                    draw_text_vertical_center(paintedFrames[newPaintedFrameId], "EMERGENCY", Point(line_width, line_height*2.1),
                                      FONT_HERSHEY_SIMPLEX, 2,
                                      Scalar(0, 0, 255), 5);
                     break;
                 case 2:
-                    draw_text_center(paintedFrames[newPaintedFrameId], "POT", Point(15 * line_width, line_height),
+                    draw_text_vertical_center(paintedFrames[newPaintedFrameId], "POT", Point(line_width, line_height*2.1),
                                      FONT_HERSHEY_SIMPLEX, 2,
                                      Scalar(0, 0, 255), 5);
 
                     break;
                 case 4:
-                    draw_text_center(paintedFrames[newPaintedFrameId], "NOT", Point(15 * line_width, line_height),
+                    draw_text_vertical_center(paintedFrames[newPaintedFrameId], "NOT", Point(line_width, line_height*2.1),
                                      FONT_HERSHEY_SIMPLEX, 2,
                                      Scalar(0, 0, 255), 5);
 
                     break;
                 case 128:
-                    draw_text_center(paintedFrames[newPaintedFrameId], "UNKNOWN ERROR", Point(15 * line_width, line_height),
-                                     FONT_HERSHEY_SIMPLEX, 1.7,
+                    draw_text_vertical_center(paintedFrames[newPaintedFrameId], "ERROR", Point(line_width, line_height*2.1),
+                                     FONT_HERSHEY_SIMPLEX, 2,
                                      Scalar(0, 0, 255), 5);
 
             }
