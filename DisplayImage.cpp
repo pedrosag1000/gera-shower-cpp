@@ -83,9 +83,10 @@ draw_text_vertical_center(Mat frame, string text, Point leftAndVerticalCenter, i
 
     return textSize;
 }
+
 Size
 draw_text(Mat frame, string text, Point leftAndTop, int fontFace, double fontScale,
-                          Scalar color, int thickness) {
+          Scalar color, int thickness) {
     int baseLine = 0;
     Size textSize = getTextSize(text, fontFace, fontScale, thickness, &baseLine);
 
@@ -185,7 +186,7 @@ void setVideoCaptureAddressByIP(string ip) {
 
 
 void sendAndReceiveDataFromToThread() {
-    if(serialPortAddress=="false")
+    if (serialPortAddress == "false")
         return;
     // Create serial port object and open serial port at 57600 buad, 8 data bits, no parity bit, one stop bit (8n1),
     // and no flow control
@@ -275,8 +276,6 @@ void sendAndReceiveDataFromToThread() {
                     zoom = tempZoom;
                     realZoom = sqrt(zoom);
                 }
-
-
 
 
                 if (allReadData[startPosition + startIndex + 9] == (char) 192 &&
@@ -451,14 +450,14 @@ void readFrameFromVideoCapture() {
     auto lastTime = currentMS();
     auto nowTime = lastTime;
 
-    int sourceWidth, sourceHeight, width, height, frameCount = 0, grid_counts = 20, circle_radius,elevationCircleRadius;
+    int sourceWidth, sourceHeight, width, height, frameCount = 0, grid_counts = 20, circle_radius, elevationCircleRadius;
     float half_width, half_height, quarter_width, quarter_height;
 
     // draw lines on center lines
     float one_height, one_width, line_width, line_height;
     // Draw radar circle on right top
 
-    Point circle_center,elevationCircleCenter;
+    Point circle_center, elevationCircleCenter;
 
     Mat frame;
 
@@ -628,19 +627,14 @@ void readFrameFromVideoCapture() {
                          Scalar(0, 0, 255), 1);
 
 
-        if (touchedPoint.x > 0 && touchedPoint.x < 2 * line_width &&
-            touchedPoint.y > height - line_width && touchedPoint.y < height) {
-            shutdown();
-        }
+        Point powerOffLocation = Point(0, height - line_height);
+        Size powerOffSize = draw_text_vertical_center(paintedFrames[newPaintedFrameId], " Power OFF ", powerOffLocation,
+                                                      FONT_HERSHEY_SIMPLEX, .8f,
+                                                      Scalar(0, 255, 0), 1);
 
-
-        Point powerOffLocation=Point(0, height - line_height);
-        Size powerOffSize=draw_text_vertical_center(paintedFrames[newPaintedFrameId], " Power OFF", powerOffLocation,
-                                  FONT_HERSHEY_SIMPLEX, .8f,
-                                  Scalar(0, 255, 0), 1);
-
-        if (touchedPoint.x >= powerOffLocation.x && touchedPoint.x < powerOffLocation.x+powerOffSize.width &&
-            touchedPoint.y >= powerOffLocation.y - powerOffSize.height/2 && touchedPoint.y < powerOffLocation.y + powerOffSize.height/2) {
+        if (touchedPoint.x >= powerOffLocation.x && touchedPoint.x < powerOffLocation.x + powerOffSize.width &&
+            touchedPoint.y >= powerOffLocation.y - powerOffSize.height &&
+            touchedPoint.y < powerOffLocation.y + powerOffSize.height) {
             shutdown();
         }
 
@@ -712,9 +706,10 @@ int main(int argc, char *argv[]) {
         cout << "You should insert 4 args" << endl
              << "1) Webcam IP (192.168.1.1 or etc)" << endl
              << "2) Serial port address (like: /dev/ttyTHS1 or /dev/ttyS0 or false for disable it)" << endl
-             << "3) Video display width in pixel (like 1920 or 1280 or 756 or etc)"<<endl
-             << "4) Video display height in pixel (like 1080 or 800 or etc)"<< endl
-             << "5) Video output file full path or false for not save the video (for example: output.mp4 or false)"<<endl
+             << "3) Video display width in pixel (like 1920 or 1280 or 756 or etc)" << endl
+             << "4) Video display height in pixel (like 1080 or 800 or etc)" << endl
+             << "5) Video output file full path or false for not save the video (for example: output.mp4 or false)"
+             << endl
              << "6) Frame ratio for writing (1 means 1 to 1 and 2 means writer 1 frame on every 2 frame ) "
              << endl
              << "For examples:" << endl
