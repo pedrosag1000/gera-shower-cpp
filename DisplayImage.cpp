@@ -14,9 +14,9 @@ using namespace std;
 using namespace mn::CppLinuxSerial;
 
 #define PI 3.14159265
-template <typename T>
-std::string to_string_with_precision(const T a_value, const int n = 6)
-{
+
+template<typename T>
+std::string to_string_with_precision(const T a_value, const int n = 6) {
     std::ostringstream out;
     out.precision(n);
     out << std::fixed << a_value;
@@ -30,13 +30,13 @@ Mat paintedFrames[10];
 double azimuthEncoder = -100, radar_size_of_angle = 20;
 double elevationEncoder = -100, view_size_of_angle = 20;
 double elevationReticleRange = 60, azimuthReticleRange = 60;
-double zoom = 1.0;
+double zoom = 1.0, realZoom = 1.0;
 string serialPortAddress = "";
 
 
-const vector<string> explode(const string &s, const char &c) {
+const vector <string> explode(const string &s, const char &c) {
     string buff{""};
-    vector<string> v;
+    vector <string> v;
 
     for (auto n: s) {
         if (n != c) buff += n;
@@ -115,7 +115,7 @@ draw_arch(Mat frame, Point center, int circle_radius, int view_angle, int size_o
         diff_x = int(cos((view_angle) / 180.0 * PI) * circle_radius);
         diff_y = int(sin((view_angle) / 180.0 * PI) * circle_radius);
 
-        draw_text_center(frame, to_string_with_precision(overrideAngle,1), center + Point(diff_x * 0.8, diff_y * 0.8),
+        draw_text_center(frame, to_string_with_precision(overrideAngle, 1), center + Point(diff_x * 0.8, diff_y * 0.8),
                          FONT_HERSHEY_SIMPLEX, fontSize, color, thickness);
     }
 }
@@ -125,14 +125,14 @@ VideoWriter videoWriter;
 VideoCapture videoCapture;
 string videoCaptureAddress;
 int paintedFrameId = 0;
-Mat frame, originalFrame, splashScreen;
+Mat originalFrame, splashScreen;
 int pressedKey = 10;
 Point touchedPoint(0, 0);
 int touchId = 0;
 int lastTouchReported = 0;
 string outputBuffer;
 string videoWriterFileFullPath;
-int videoWriterFrameRatio=1;
+int videoWriterFrameRatio = 1;
 int displayWidth, displayHeight;
 
 void openVideoCapture(bool force = false) {
@@ -188,12 +188,11 @@ void sendAndReceiveDataFromToThread() {
     bool isDataStarted = false;
     int startPosition = -1, serialLength = 0;
 
-    bool newData=false;
+    bool newData = false;
     while (pressedKey != 27) {
 
         readData.clear();
         serialPort.Read(readData);
-
 
 
         allReadData.append(readData);
@@ -216,16 +215,16 @@ void sendAndReceiveDataFromToThread() {
             //length
             allReadData[startPosition + 5] == (char) 14) {
 
-            newData=true;
+            newData = true;
             int startIndex = 6;
 
 
             int checksum = 0;
-            for (int i = startIndex; i < lengthOfData-1; i++) {
+            for (int i = startIndex; i < lengthOfData - 1; i++) {
                 checksum += allReadData[i];
             }
 
-            if (checksum % 256 == allReadData[lengthOfData-1]) {
+            if (checksum % 256 == allReadData[lengthOfData - 1]) {
                 cout << "checksum is NOT OK !!!!!" << endl;
             } else {
 
@@ -244,7 +243,8 @@ void sendAndReceiveDataFromToThread() {
                 elevationReticleRange = ((double) (allReadData[startPosition + startIndex + 6] * 256 +
                                                    allReadData[startPosition + startIndex + 7])) / 10;
 
-                zoom = (double)allReadData[startPosition + startIndex + 8] / 10;
+                zoom = (double) allReadData[startPosition + startIndex + 8] / 10;
+                realZoom = sqrt(zoom);
 
 
                 setVideoCaptureAddressByIP(
@@ -276,7 +276,7 @@ void sendAndReceiveDataFromToThread() {
         }
 
         if (lastTouchReported != touchId || newData) {
-            newData=false;
+            newData = false;
             outputBuffer = "";
             int checksum = 0;
             //start flags
@@ -292,8 +292,8 @@ void sendAndReceiveDataFromToThread() {
             outputBuffer += (char) (azimuthEncoder * 10) / 256;
             outputBuffer += (char) (azimuthEncoder * 10) % 256;
 
-            outputBuffer += (char) ((elevationEncoder  * 10)+100) / 256;
-            outputBuffer += (char) ((elevationEncoder  * 10)+100) % 256;
+            outputBuffer += (char) ((elevationEncoder * 10) + 100) / 256;
+            outputBuffer += (char) ((elevationEncoder * 10) + 100) % 256;
 
             outputBuffer += (char) (azimuthReticleRange * 10) / 256;
             outputBuffer += (char) (azimuthReticleRange * 10) % 256;
@@ -315,8 +315,8 @@ void sendAndReceiveDataFromToThread() {
 
             checksum += (char) (azimuthEncoder * 10) / 256;
             checksum += (char) (azimuthEncoder * 10) % 256;
-            checksum += (char) ((elevationEncoder  * 10)+100) / 256;
-            checksum += (char) ((elevationEncoder  * 10)+100) % 256;
+            checksum += (char) ((elevationEncoder * 10) + 100) / 256;
+            checksum += (char) ((elevationEncoder * 10) + 100) % 256;
 
             checksum += (char) (azimuthReticleRange * 10) / 256;
             checksum += (char) (azimuthReticleRange * 10) % 256;
@@ -357,7 +357,7 @@ void sendAndReceiveDataFromToThread() {
 
 void writeFrameToVideoWriter() {
 
-    int frameCounter=0;
+    int frameCounter = 0;
 
     if (videoWriterFileFullPath == "false") {
         cout << "Video writer is DISABLED!!!" << endl;
@@ -389,10 +389,10 @@ void writeFrameToVideoWriter() {
 
         if (diff != 0) {
             lastFrameId += diff;
-            if(frameCounter % videoWriterFrameRatio == 0) {
+            if (frameCounter % videoWriterFrameRatio == 0) {
                 videoWriter.write(paintedFrames[lastFrameId]);
             }
-            frameCounter=(frameCounter+1)%videoWriterFrameRatio;
+            frameCounter = (frameCounter + 1) % videoWriterFrameRatio;
         } else {
             this_thread::sleep_for(chrono::milliseconds(10));
         }
@@ -416,8 +416,17 @@ void readFrameFromVideoCapture() {
 
     auto lastTime = currentMS();
     auto nowTime = lastTime;
-    int frameCount = 0;
 
+    int sourceWidth, sourceHeight, width, height, frameCount = 0, grid_counts = 20, circle_radius,elevationCircleRadius;
+    float half_width, half_height, quarter_width, quarter_height;
+
+    // draw lines on center lines
+    float one_height, one_width, line_width, line_height;
+    // Draw radar circle on right top
+
+    Point circle_center,elevationCircleCenter;
+
+    Mat frame;
 
     Mat defaultMath(displayHeight, displayWidth, 16, Scalar(0));
     while (pressedKey != 27) {
@@ -431,37 +440,61 @@ void readFrameFromVideoCapture() {
         do {
             openVideoCapture(originalFrame.empty());
             videoCapture.read(originalFrame);
-        } while (originalFrame.empty() && pressedKey!=27);
+        } while (originalFrame.empty() && pressedKey != 27);
 
 
-        if(pressedKey==27)
+        if (pressedKey == 27)
             continue;
 
-        int sourceWidth = originalFrame.cols;
-        int sourceHeight = originalFrame.rows;
-        int width = sourceWidth, height = sourceHeight;
-        int newPaintedFrameId = (paintedFrameId + 1) % 10;
+        if (sourceWidth != originalFrame.cols || sourceHeight != originalFrame.rows) {
+            sourceWidth = originalFrame.cols;
+            sourceHeight = originalFrame.rows;
+            width = sourceWidth, height = sourceHeight;
+            if (width > displayWidth) {
+                ratio = (double) displayWidth / sourceWidth;
 
-        if (width > displayWidth) {
-            ratio = (double) displayWidth / sourceWidth;
+                width = (int) (sourceWidth * ratio);
+                height = (int) (sourceHeight * ratio);
+            }
 
-            width = (int) (sourceWidth * ratio);
-            height = (int) (sourceHeight * ratio);
+            half_width = width / 2.0;
+            half_height = height / 2.0;
+
+            quarter_width = width / 4.0;
+            quarter_height = height / 4.0;
+
+
+            // draw lines on center lines
+            one_height = height / 100.0;
+            one_width = width / 100.0;
+
+            line_width = width / (float) grid_counts;
+            line_height = height / (float) grid_counts;
+
+            // Draw radar circle on right top
+            circle_radius = int(quarter_height / 3);
+            circle_center = Point(int(width - circle_radius) - 10, circle_radius + 10);
+
+            elevationCircleRadius = int(quarter_height / 2);
+            elevationCircleCenter = Point(int(width - elevationCircleRadius) - 10, height - elevationCircleRadius * .5);
         }
 
 
+        newPaintedFrameId = (paintedFrameId + 1) % 10;
+
+
+
+
         // zoom the image
-        double realZoom = sqrt(zoom);
 
-        Mat resized = originalFrame.clone();
 
-        resized = originalFrame(Rect(
+        frame = originalFrame(Rect(
                 (sourceWidth / (2 * realZoom)) * (realZoom - 1),
                 (sourceHeight / (2 * realZoom)) * (realZoom - 1),
                 sourceWidth - ((sourceWidth / realZoom) * (realZoom - 1)),
                 sourceHeight - ((sourceHeight / realZoom) * (realZoom - 1))));
 
-        resize(resized, frame, Size(width, height), INTER_LINEAR);
+        resize(frame, frame, Size(width, height), INTER_LINEAR);
 
         paintedFrames[newPaintedFrameId] = defaultMath.clone();
         cv::Rect roi(cv::Point((paintedFrames[newPaintedFrameId].cols - frame.cols) / 2,
@@ -474,25 +507,12 @@ void readFrameFromVideoCapture() {
         height = paintedFrames[newPaintedFrameId].rows;
 
 
-        float half_width = width / 2.0;
-        float half_height = height / 2.0;
 
-        float quarter_width = width / 4.0;
-        float quarter_height = height / 4.0;
 
         // Draw center lines
         line(paintedFrames[newPaintedFrameId], Point(half_width, 0), Point(half_width, height), Scalar(0, 255, 0), 1);
         line(paintedFrames[newPaintedFrameId], Point(0, half_height), Point(width, half_height), Scalar(0, 255, 0), 1);
 
-
-
-        // draw lines on center lines
-        float one_height = height / 100.0;
-        float one_width = width / 100.0;
-
-        int grid_counts = 20;
-        float line_width = width / (float) grid_counts;
-        float line_height = height / (float) grid_counts;
 
         for (int i = 1; i <= grid_counts; i++) {
             line(
@@ -509,9 +529,6 @@ void readFrameFromVideoCapture() {
                     1);
         }
 
-        // Draw radar circle on right top
-        int circle_radius = int(quarter_height / 3);
-        Point circle_center = Point(int(width - circle_radius) - 10, circle_radius + 10);
 
         circle(paintedFrames[newPaintedFrameId], circle_center, circle_radius,
                Scalar(0, 255, 0));
@@ -528,29 +545,28 @@ void readFrameFromVideoCapture() {
 
 
         // Draw view sight
-        circle_radius = int(quarter_height / 2);
-        circle_center = Point(int(width - circle_radius) - 10, height - circle_radius * .5);
+
 
         draw_arch(
                 paintedFrames[newPaintedFrameId],
-                circle_center,
-                circle_radius,
+                elevationCircleCenter,
+                elevationCircleRadius,
                 (280 + 370) / 2,
                 (370 - 280) + view_size_of_angle,
                 Scalar(0, 255, 0),
                 1);
 
-        int view_angle_temp = elevationEncoder < -90 ? (paintedFrameId / 10 % 100) - 10 : elevationEncoder;
-        view_angle_temp = ((view_angle_temp + 10) % 90) - 10;
+//        int view_angle_temp = elevationEncoder < -90 ? (paintedFrameId / 10 % 100) - 10 : elevationEncoder;
+//        view_angle_temp = ((view_angle_temp + 10) % 90) - 10;
 
         draw_arch(
                 paintedFrames[newPaintedFrameId],
-                circle_center,
-                circle_radius,
-                10 - (view_angle_temp + 10),
+                elevationCircleCenter,
+                elevationCircleRadius,
+                10 - (elevationEncoder + 10),
                 view_size_of_angle,
                 Scalar(0, 0, 255),
-                2, true, .7, true, view_angle_temp);
+                2, true, .7, true, elevationEncoder);
 
         // show horizental angle
 
@@ -571,24 +587,22 @@ void readFrameFromVideoCapture() {
 
         // show zoom
         draw_text_center(paintedFrames[newPaintedFrameId],
-                         to_string_with_precision(zoom,1) + "X",
+                         to_string_with_precision(zoom, 1) + "X",
                          Point(line_width, line_height), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 0, 255), 2);
 
         draw_text_center(paintedFrames[newPaintedFrameId], string(dateTimeChar), Point(4 * line_width, line_height),
                          FONT_HERSHEY_SIMPLEX, 0.5,
                          Scalar(0, 0, 255), 1);
 
-        bool red = false;
 
         if (touchedPoint.x > 0 && touchedPoint.x < 2 * line_width &&
             touchedPoint.y > height - line_width && touchedPoint.y < height) {
-            red = true;
             shutdown();
         }
 
         draw_text_vertical_center(paintedFrames[newPaintedFrameId], " Power OFF", Point(0, height - line_height),
                                   FONT_HERSHEY_SIMPLEX, .8f,
-                                  red ? Scalar(0, 0, 255) : Scalar(0, 255, 0), 1);
+                                  Scalar(0, 255, 0), 1);
 
 
         paintedFrameId = newPaintedFrameId;
@@ -671,7 +685,7 @@ int main(int argc, char *argv[]) {
 
     videoWriterFileFullPath = argv[5];
 
-    videoWriterFrameRatio= stoi(argv[6]);
+    videoWriterFrameRatio = stoi(argv[6]);
 
     displayWidth = stoi(argv[3]);
     displayHeight = stoi(argv[4]);
@@ -701,11 +715,11 @@ int main(int argc, char *argv[]) {
     showFrameToVideoOutput();
 
 
-    cout<<"Join the Video thread"<<endl;
+    cout << "Join the Video thread" << endl;
     writerVideoThread.join();
-    cout<<"Join on the read thread"<<endl;
+    cout << "Join on the read thread" << endl;
     readFrameFromVideoCaptureThread.join();
-    cout<<"Join on the serial thread"<<endl;
+    cout << "Join on the serial thread" << endl;
     serialThread.join();
 
 
