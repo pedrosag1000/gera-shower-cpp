@@ -31,6 +31,8 @@ double azimuthEncoder = -100, radar_size_of_angle = 20;
 double elevationEncoder = -100, view_size_of_angle = 20;
 double elevationReticleRange = 60, azimuthReticleRange = 60;
 double zoom = 1.0, realZoom = 1.0;
+int errorFlag=0;
+
 string serialPortAddress = "";
 
 
@@ -224,7 +226,7 @@ void sendAndReceiveDataFromToThread() {
 //        cout << "START:" << (int) startPosition << endl;
 //        cout << "SIZE:" << (int) allReadData.size() << endl;
 //
-        int lengthOfData = 20;
+        int lengthOfData = 21;
 
         if (startPosition >= 0 && allReadData.size() >= startPosition + lengthOfData &&
             allReadData[startPosition + 1] == (char) 254 &&
@@ -232,7 +234,7 @@ void sendAndReceiveDataFromToThread() {
             allReadData[startPosition + 3] == (char) 5 &&
             allReadData[startPosition + 4] == (char) 2 &&
             //length
-            allReadData[startPosition + 5] == (char) 14) {
+            allReadData[startPosition + 5] == (char) 15) {
 
             newData = true;
             int startIndex = 6;
@@ -286,6 +288,8 @@ void sendAndReceiveDataFromToThread() {
                             to_string(allReadData[startPosition + startIndex + 11]) + '.' +
                             to_string(allReadData[startPosition + startIndex + 12]));
 
+                errorFlag=allReadData[startPosition+startIndex+13];
+
 
 //                cout << "AZIMUTH ENCODER: " << azimuthEncoder << endl;
 //                cout << "ELEVATION ENCODER: " << elevationEncoder << endl;
@@ -319,7 +323,7 @@ void sendAndReceiveDataFromToThread() {
             outputBuffer += (char) 18;
             outputBuffer += (char) 5;
             outputBuffer += (char) 2;
-            outputBuffer += (char) 18;
+            outputBuffer += (char) 19;
 
 
             outputBuffer += (char) (azimuthEncoder * 10) / 256;
@@ -345,6 +349,7 @@ void sendAndReceiveDataFromToThread() {
 
             outputBuffer += (char) touchedPoint.y / 256;
             outputBuffer += (char) touchedPoint.y % 256;
+            outputBuffer += (char) errorFlag;
 
             checksum += (char) (azimuthEncoder * 10) / 256;
             checksum += (char) (azimuthEncoder * 10) % 256;
@@ -361,6 +366,7 @@ void sendAndReceiveDataFromToThread() {
             checksum += (char) ip2;
             checksum += (char) ip3;
             checksum += (char) ip4;
+            checksum += (char) errorFlag;
 
 
             checksum += (char) touchedPoint.x / 256;
@@ -485,7 +491,7 @@ void readFrameFromVideoCapture() {
             width = displayWidth;
             height = displayHeight;
             desireWidth = sourceWidth;
-            desireHeight = sourceHeight
+            desireHeight = sourceHeight;
 
 
             if (desireWidth > displayWidth || desireHeight > displayHeight) {
@@ -633,6 +639,37 @@ void readFrameFromVideoCapture() {
         draw_text_center(paintedFrames[newPaintedFrameId], string(dateTimeChar), Point(4 * line_width, line_height),
                          FONT_HERSHEY_SIMPLEX, 0.5,
                          Scalar(0, 0, 255), 1);
+
+        //EMERGENCY 1 POT 2 NOT 4
+
+
+        if(newPaintedFrameId / 5 % 2 == 0) {
+            switch (errorFlag) {
+                case 1:
+                    draw_text_center(paintedFrames[newPaintedFrameId], "EMERGENCY", Point(15 * line_width, line_height),
+                                     FONT_HERSHEY_SIMPLEX, 2,
+                                     Scalar(0, 0, 255), 5);
+                    break;
+                case 2:
+                    draw_text_center(paintedFrames[newPaintedFrameId], "POT", Point(15 * line_width, line_height),
+                                     FONT_HERSHEY_SIMPLEX, 2,
+                                     Scalar(0, 0, 255), 5);
+
+                    break;
+                case 4:
+                    draw_text_center(paintedFrames[newPaintedFrameId], "NOT", Point(15 * line_width, line_height),
+                                     FONT_HERSHEY_SIMPLEX, 2,
+                                     Scalar(0, 0, 255), 5);
+
+                    break;
+                case 128:
+                    draw_text_center(paintedFrames[newPaintedFrameId], "UNKNOWN ERROR", Point(15 * line_width, line_height),
+                                     FONT_HERSHEY_SIMPLEX, 1.7,
+                                     Scalar(0, 0, 255), 5);
+
+            }
+
+        }
 
 
         powerOffSize = draw_text_vertical_center(paintedFrames[newPaintedFrameId], " Power OFF ", powerOffLocation,
