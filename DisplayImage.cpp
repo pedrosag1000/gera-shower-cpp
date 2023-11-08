@@ -69,7 +69,7 @@ draw_text_center(Mat frame, string text, Point center, int fontFace, double font
 }
 
 Size
-draw_text_vertical_center(Mat frame, string text, Point leftAndVerticalCenter, int fontFace, double fontScale,
+draw_text_vertical_center(Mat frame, string text, Point leftAndTop, int fontFace, double fontScale,
                           Scalar color, int thickness) {
     int baseLine = 0;
     Size textSize = getTextSize(text, fontFace, fontScale, thickness, &baseLine);
@@ -450,7 +450,7 @@ void readFrameFromVideoCapture() {
     auto lastTime = currentMS();
     auto nowTime = lastTime;
 
-    int sourceWidth, sourceHeight, width, height, frameCount = 0, grid_counts = 20, circle_radius, elevationCircleRadius;
+    int sourceWidth, sourceHeight, width, height, frameCount = 0, grid_counts = 20, circle_radius, elevationCircleRadius, newPaintedFrameId = 0;
     float half_width, half_height, quarter_width, quarter_height;
 
     // draw lines on center lines
@@ -535,8 +535,7 @@ void readFrameFromVideoCapture() {
         frame.copyTo(paintedFrames[newPaintedFrameId](roi));
 
 
-        width = paintedFrames[newPaintedFrameId].cols;
-        height = paintedFrames[newPaintedFrameId].rows;
+
 
 
 
