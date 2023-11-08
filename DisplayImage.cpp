@@ -481,7 +481,8 @@ void readFrameFromVideoCapture() {
         if (sourceWidth != originalFrame.cols || sourceHeight != originalFrame.rows) {
             sourceWidth = originalFrame.cols;
             sourceHeight = originalFrame.rows;
-            width = sourceWidth, height = sourceHeight;
+            width = sourceWidth;
+            height = sourceHeight;
             if (width > displayWidth) {
                 ratio = (double) displayWidth / sourceWidth;
 
@@ -518,7 +519,6 @@ void readFrameFromVideoCapture() {
 
 
         // zoom the image
-
 
         frame = originalFrame(Rect(
                 (sourceWidth / (2 * realZoom)) * (realZoom - 1),
