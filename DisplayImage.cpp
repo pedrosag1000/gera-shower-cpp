@@ -68,19 +68,35 @@ draw_text_center(Mat frame, string text, Point center, int fontFace, double font
     putText(frame, text, textOrg, fontFace, fontScale, color, thickness);
 }
 
-void
+Size
 draw_text_vertical_center(Mat frame, string text, Point leftAndVerticalCenter, int fontFace, double fontScale,
                           Scalar color, int thickness) {
     int baseLine = 0;
     Size textSize = getTextSize(text, fontFace, fontScale, thickness, &baseLine);
     baseLine += thickness;
 
-    Point textOrg = Point(leftAndVerticalCenter.x, leftAndVerticalCenter.y + textSize.height / 2);
+    Point textOrg = Point(leftAndTop.x, leftAndTop.y + textSize.height / 2);
     // rectangle(frame, textOrg + Point(0, baseLine), textOrg + Point(textSize.width, -textSize.height), color);
     // line(frame, textOrg + Point(0, thickness), textOrg + Point(textSize.width, thickness), color);
 
     putText(frame, text, textOrg, fontFace, fontScale, color, thickness);
+
+    return textSize;
 }
+Size
+draw_text(Mat frame, string text, Point leftAndTop, int fontFace, double fontScale,
+                          Scalar color, int thickness) {
+    int baseLine = 0;
+    Size textSize = getTextSize(text, fontFace, fontScale, thickness, &baseLine);
+
+    // rectangle(frame, textOrg + Point(0, baseLine), textOrg + Point(textSize.width, -textSize.height), color);
+    // line(frame, textOrg + Point(0, thickness), textOrg + Point(textSize.width, thickness), color);
+
+    putText(frame, text, leftAndTop, fontFace, fontScale, color, thickness);
+
+    return textSize;
+}
+
 
 void
 draw_arch(Mat frame, Point center, int circle_radius, int view_angle, int size_of_angle, Scalar color, int thickness,
@@ -169,6 +185,8 @@ void setVideoCaptureAddressByIP(string ip) {
 
 
 void sendAndReceiveDataFromToThread() {
+    if(serialPortAddress=="false")
+        return;
     // Create serial port object and open serial port at 57600 buad, 8 data bits, no parity bit, one stop bit (8n1),
     // and no flow control
     SerialPort serialPort = SerialPort(serialPortAddress, BaudRate::B_115200, NumDataBits::EIGHT, Parity::NONE,
@@ -228,12 +246,20 @@ void sendAndReceiveDataFromToThread() {
                 cout << "checksum is NOT OK !!!!!" << endl;
             } else {
 
-                azimuthEncoder = ((double) (allReadData[startPosition + startIndex] * 256 +
-                                            allReadData[startPosition + startIndex + 1])) / 10;
+                double tempAzimuthEncoder = ((double) (allReadData[startPosition + startIndex] * 256 +
+                                                       allReadData[startPosition + startIndex + 1])) / 10;
+
+                if (tempAzimuthEncoder >= 0 && tempAzimuthEncoder <= 360)
+                    azimuthEncoder = tempAzimuthEncoder;
 
 
-                elevationEncoder = ((double) (allReadData[startPosition + startIndex + 2] * 256 +
-                                              allReadData[startPosition + startIndex + 3])) / 10 - 100;
+                double tempElevationEncoder = ((double) (allReadData[startPosition + startIndex + 2] * 256 +
+                                                         allReadData[startPosition + startIndex + 3])) / 10 - 100;
+
+                //TODO make sure validation
+                if (tempElevationEncoder >= -100 && tempElevationEncoder <= 100) {
+                    elevationEncoder = tempElevationEncoder;
+                }
 
 
                 azimuthReticleRange = ((double) (allReadData[startPosition + startIndex + 4] * 256 +
@@ -243,15 +269,23 @@ void sendAndReceiveDataFromToThread() {
                 elevationReticleRange = ((double) (allReadData[startPosition + startIndex + 6] * 256 +
                                                    allReadData[startPosition + startIndex + 7])) / 10;
 
-                zoom = (double) allReadData[startPosition + startIndex + 8] / 10;
-                realZoom = sqrt(zoom);
+                // min 1 zoom max 25
+                double tempZoom = (double) allReadData[startPosition + startIndex + 8] / 10;
+                if (tempZoom >= 1 && tempZoom <= 25) {
+                    zoom = tempZoom;
+                    realZoom = sqrt(zoom);
+                }
 
 
-                setVideoCaptureAddressByIP(
-                        to_string(allReadData[startPosition + startIndex + 9]) + '.' +
-                        to_string(allReadData[startPosition + startIndex + 10]) + '.' +
-                        to_string(allReadData[startPosition + startIndex + 11]) + '.' +
-                        to_string(allReadData[startPosition + startIndex + 12]));
+
+
+                if (allReadData[startPosition + startIndex + 9] == (char) 192 &&
+                    allReadData[startPosition + startIndex + 10] == (char) 168)
+                    setVideoCaptureAddressByIP(
+                            to_string(allReadData[startPosition + startIndex + 9]) + '.' +
+                            to_string(allReadData[startPosition + startIndex + 10]) + '.' +
+                            to_string(allReadData[startPosition + startIndex + 11]) + '.' +
+                            to_string(allReadData[startPosition + startIndex + 12]));
 
 
 //                cout << "AZIMUTH ENCODER: " << azimuthEncoder << endl;
@@ -346,9 +380,9 @@ void sendAndReceiveDataFromToThread() {
 
 
         if (allReadData.size() > 100) {
-            this_thread::sleep_for(chrono::milliseconds(10));
-        } else {
             this_thread::sleep_for(chrono::milliseconds(100));
+        } else {
+            this_thread::sleep_for(chrono::milliseconds(1000));
         }
     }
     serialPort.Close();
@@ -394,7 +428,7 @@ void writeFrameToVideoWriter() {
             }
             frameCounter = (frameCounter + 1) % videoWriterFrameRatio;
         } else {
-            this_thread::sleep_for(chrono::milliseconds(10));
+            this_thread::sleep_for(chrono::milliseconds(30));
         }
     }
     videoWriter.release();
@@ -431,17 +465,16 @@ void readFrameFromVideoCapture() {
     Mat defaultMath(displayHeight, displayWidth, 16, Scalar(0));
     while (pressedKey != 27) {
 
-        nowTime = currentMS();
-        time(&now);
-        currentTime = localtime(&now);
-        strftime(dateTimeChar, 50, "%Y/%m/%d %H:%M:%S", currentTime);
-
 
         do {
             openVideoCapture(originalFrame.empty());
             videoCapture.read(originalFrame);
         } while (originalFrame.empty() && pressedKey != 27);
 
+        nowTime = currentMS();
+        time(&now);
+        currentTime = localtime(&now);
+        strftime(dateTimeChar, 50, "%Y/%m/%d %H:%M:%S", currentTime);
 
         if (pressedKey == 27)
             continue;
@@ -600,9 +633,16 @@ void readFrameFromVideoCapture() {
             shutdown();
         }
 
-        draw_text_vertical_center(paintedFrames[newPaintedFrameId], " Power OFF", Point(0, height - line_height),
+
+        Point powerOffLocation=Point(0, height - line_height);
+        Size powerOffSize=draw_text_vertical_center(paintedFrames[newPaintedFrameId], " Power OFF", powerOffLocation,
                                   FONT_HERSHEY_SIMPLEX, .8f,
                                   Scalar(0, 255, 0), 1);
+
+        if (touchedPoint.x >= powerOffLocation.x && touchedPoint.x < powerOffLocation.x+powerOffSize.width &&
+            touchedPoint.y >= powerOffLocation.y - powerOffSize.height/2 && touchedPoint.y < powerOffLocation.y + powerOffSize.height/2) {
+            shutdown();
+        }
 
 
         paintedFrameId = newPaintedFrameId;
@@ -651,7 +691,7 @@ void showFrameToVideoOutput() {
             frameCount = 0;
             lastTime = nowTime;
         }
-        pressedKey = waitKey(25);
+        pressedKey = waitKey(30);
     }
 }
 
@@ -671,15 +711,15 @@ int main(int argc, char *argv[]) {
 
         cout << "You should insert 4 args" << endl
              << "1) Webcam IP (192.168.1.1 or etc)" << endl
-             << "2) Serial port address (like: /dev/ttyTHS1 or /dev/ttyS0 or etc)" << endl
-             << "3) Video display width in pixel (like 1920 or 1280 or 756 or etc)"
-             << "4) Video display height in pixel (like 1080 or 800 or etc)"
-             << endl
-             << "5) Video output file full path or false for not save the video (for example: output.mp4 or false) "
+             << "2) Serial port address (like: /dev/ttyTHS1 or /dev/ttyS0 or false for disable it)" << endl
+             << "3) Video display width in pixel (like 1920 or 1280 or 756 or etc)"<<endl
+             << "4) Video display height in pixel (like 1080 or 800 or etc)"<< endl
+             << "5) Video output file full path or false for not save the video (for example: output.mp4 or false)"<<endl
              << "6) Frame ratio for writing (1 means 1 to 1 and 2 means writer 1 frame on every 2 frame ) "
              << endl
-             << "For example:" << endl
-             << "./DisplayImage 192.168.1.100 /dev/ttyTHS2 1920 1080 filename.mp4 30" << endl;;
+             << "For examples:" << endl
+             << "./DisplayImage 192.168.1.100 /dev/ttyTHS2 1920 1080 filename.mp4 30" << endl
+             << "./DisplayImage 192.168.1.100 /dev/ttyTHS2 1920 1080 false 0" << endl;;
         return 1;
     }
 
