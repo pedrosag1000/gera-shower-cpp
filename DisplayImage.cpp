@@ -482,8 +482,8 @@ void readFrameFromVideoCapture() {
         if (sourceWidth != originalFrame.cols || sourceHeight != originalFrame.rows) {
             sourceWidth = originalFrame.cols;
             sourceHeight = originalFrame.rows;
-            width = sourceWidth;
-            height = sourceHeight;
+            width = displayHeight;
+            height = displayHeight;
 
             if (width > displayWidth || height > displayHeight) {
                 ratio = MIN(
@@ -529,15 +529,14 @@ void readFrameFromVideoCapture() {
 
         // zoom the image
 
-        if (realZoom != 1) {
+        if(realZoom!=1) {
             frame = originalFrame(Rect(
                     (sourceWidth / (2 * realZoom)) * (realZoom - 1),
                     (sourceHeight / (2 * realZoom)) * (realZoom - 1),
                     sourceWidth - ((sourceWidth / realZoom) * (realZoom - 1)),
                     sourceHeight - ((sourceHeight / realZoom) * (realZoom - 1))));
+            resize(frame, frame, Size(width, height), INTER_LINEAR);
         }
-
-        resize(frame, frame, Size(width, height), INTER_LINEAR);
 
         paintedFrames[newPaintedFrameId] = defaultMath.clone();
         cv::Rect roi(cv::Point((paintedFrames[newPaintedFrameId].cols - frame.cols) / 2,
