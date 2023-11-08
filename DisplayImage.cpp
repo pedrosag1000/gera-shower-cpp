@@ -450,7 +450,7 @@ void readFrameFromVideoCapture() {
     auto lastTime = currentMS();
     auto nowTime = lastTime;
 
-    int sourceWidth, sourceHeight, width, height, frameCount = 0, grid_counts = 20, circle_radius, elevationCircleRadius, newPaintedFrameId = 0;
+    int sourceWidth, sourceHeight, desireWidth, desireHeight, width, height, frameCount = 0, grid_counts = 20, circle_radius, elevationCircleRadius, newPaintedFrameId = 0;
     float half_width, half_height, quarter_width, quarter_height;
 
     // draw lines on center lines
@@ -482,17 +482,20 @@ void readFrameFromVideoCapture() {
         if (sourceWidth != originalFrame.cols || sourceHeight != originalFrame.rows) {
             sourceWidth = originalFrame.cols;
             sourceHeight = originalFrame.rows;
-            width = displayHeight;
+            width = displayWidth;
             height = displayHeight;
+            desireWidth = sourceWidth;
+            desireHeight = sourceHeight
 
-            if (width > displayWidth || height > displayHeight) {
+
+            if (desireWidth > displayWidth || desireHeight > displayHeight) {
                 ratio = MIN(
                         (double) displayWidth / sourceWidth,
                         (double) displayHeight / sourceHeight);
 
 
-                width = (int) (sourceWidth * ratio);
-                height = (int) (sourceHeight * ratio);
+                desireWidth = (int) (sourceWidth * ratio);
+                displayHeight = (int) (sourceHeight * ratio);
             }
 
 
@@ -529,14 +532,13 @@ void readFrameFromVideoCapture() {
 
         // zoom the image
 
-        if(realZoom!=1) {
-            frame = originalFrame(Rect(
-                    (sourceWidth / (2 * realZoom)) * (realZoom - 1),
-                    (sourceHeight / (2 * realZoom)) * (realZoom - 1),
-                    sourceWidth - ((sourceWidth / realZoom) * (realZoom - 1)),
-                    sourceHeight - ((sourceHeight / realZoom) * (realZoom - 1))));
-            resize(frame, frame, Size(width, height), INTER_LINEAR);
-        }
+        frame = originalFrame(Rect(
+                (sourceWidth / (2 * realZoom)) * (realZoom - 1),
+                (sourceHeight / (2 * realZoom)) * (realZoom - 1),
+                sourceWidth - ((sourceWidth / realZoom) * (realZoom - 1)),
+                sourceHeight - ((sourceHeight / realZoom) * (realZoom - 1))));
+        resize(frame, frame, Size(desireWidth, desireHeight), INTER_LINEAR);
+
 
         paintedFrames[newPaintedFrameId] = defaultMath.clone();
         cv::Rect roi(cv::Point((paintedFrames[newPaintedFrameId].cols - frame.cols) / 2,
