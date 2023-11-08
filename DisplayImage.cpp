@@ -457,7 +457,8 @@ void readFrameFromVideoCapture() {
     float one_height, one_width, line_width, line_height;
     // Draw radar circle on right top
 
-    Point circle_center, elevationCircleCenter;
+    Point circle_center, elevationCircleCenter, powerOffLocation;
+    Size powerOfSize;
 
     Mat frame;
 
@@ -515,6 +516,9 @@ void readFrameFromVideoCapture() {
 
             elevationCircleRadius = int(quarter_height / 2);
             elevationCircleCenter = Point(int(width - elevationCircleRadius) - 10, height - elevationCircleRadius * .5);
+
+            powerOffLocation = Point(0, height - line_height);
+
         }
 
 
@@ -525,11 +529,13 @@ void readFrameFromVideoCapture() {
 
         // zoom the image
 
-        frame = originalFrame(Rect(
-                (sourceWidth / (2 * realZoom)) * (realZoom - 1),
-                (sourceHeight / (2 * realZoom)) * (realZoom - 1),
-                sourceWidth - ((sourceWidth / realZoom) * (realZoom - 1)),
-                sourceHeight - ((sourceHeight / realZoom) * (realZoom - 1))));
+        if (realZoom != 1) {
+            frame = originalFrame(Rect(
+                    (sourceWidth / (2 * realZoom)) * (realZoom - 1),
+                    (sourceHeight / (2 * realZoom)) * (realZoom - 1),
+                    sourceWidth - ((sourceWidth / realZoom) * (realZoom - 1)),
+                    sourceHeight - ((sourceHeight / realZoom) * (realZoom - 1))));
+        }
 
         resize(frame, frame, Size(width, height), INTER_LINEAR);
 
@@ -628,10 +634,9 @@ void readFrameFromVideoCapture() {
                          Scalar(0, 0, 255), 1);
 
 
-        Point powerOffLocation = Point(0, height - line_height);
-        Size powerOffSize = draw_text_vertical_center(paintedFrames[newPaintedFrameId], " Power OFF ", powerOffLocation,
-                                                      FONT_HERSHEY_SIMPLEX, .8f,
-                                                      Scalar(0, 255, 0), 1);
+        powerOffSize = draw_text_vertical_center(paintedFrames[newPaintedFrameId], " Power OFF ", powerOffLocation,
+                                                 FONT_HERSHEY_SIMPLEX, .8f,
+                                                 Scalar(0, 255, 0), 1);
 
         if (touchedPoint.x >= powerOffLocation.x && touchedPoint.x < powerOffLocation.x + powerOffSize.width &&
             touchedPoint.y >= powerOffLocation.y - powerOffSize.height &&
