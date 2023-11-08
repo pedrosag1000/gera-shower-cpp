@@ -501,7 +501,7 @@ void readFrameFromVideoCapture() {
 
 
                 desireWidth = (int) (sourceWidth * ratio);
-                displayHeight = (int) (sourceHeight * ratio);
+                desireHeight = (int) (sourceHeight * ratio);
             }
 
 
