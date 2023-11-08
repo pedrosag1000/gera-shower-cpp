@@ -483,12 +483,17 @@ void readFrameFromVideoCapture() {
             sourceHeight = originalFrame.rows;
             width = sourceWidth;
             height = sourceHeight;
-            if (width > displayWidth) {
-                ratio = (double) displayWidth / sourceWidth;
+
+            if (width > displayWidth || height > displayHeight) {
+                ratio = MIN(
+                        (double) displayWidth / sourceWidth,
+                        (double) displayHeight / sourceHeight);
+
 
                 width = (int) (sourceWidth * ratio);
                 height = (int) (sourceHeight * ratio);
             }
+
 
             half_width = width / 2.0;
             half_height = height / 2.0;
@@ -533,9 +538,6 @@ void readFrameFromVideoCapture() {
                                (paintedFrames[newPaintedFrameId].rows - frame.rows) / 2), frame.size());
 
         frame.copyTo(paintedFrames[newPaintedFrameId](roi));
-
-
-
 
 
 
