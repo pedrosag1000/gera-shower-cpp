@@ -661,6 +661,10 @@ void readFrameFromVideoCapture() {
                                      FONT_HERSHEY_SIMPLEX, 2,
                                      Scalar(0, 0, 255), 5);
 
+                case 8:
+                    draw_text_vertical_center(paintedFrames[newPaintedFrameId], "SERVO ON", Point(line_width, line_height*2.1),
+                                              FONT_HERSHEY_SIMPLEX, 2,
+                                              Scalar(0, 0, 255), 5);
                     break;
                 case 128:
                     draw_text_vertical_center(paintedFrames[newPaintedFrameId], "ERROR", Point(line_width, line_height*2.1),
