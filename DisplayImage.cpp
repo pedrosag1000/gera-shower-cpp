@@ -646,30 +646,40 @@ void readFrameFromVideoCapture() {
         if(newPaintedFrameId / 5 % 2 == 0) {
             switch (errorFlag) {
                 case 1:
+
                     draw_text_vertical_center(paintedFrames[newPaintedFrameId], "EMERGENCY", Point(line_width, line_height*2.1),
                                      FONT_HERSHEY_SIMPLEX, 2,
                                      Scalar(0, 0, 255), 5);
                     break;
+
                 case 2:
+
                     draw_text_vertical_center(paintedFrames[newPaintedFrameId], "POT", Point(line_width, line_height*2.1),
                                      FONT_HERSHEY_SIMPLEX, 2,
                                      Scalar(0, 0, 255), 5);
 
                     break;
+
                 case 4:
+
                     draw_text_vertical_center(paintedFrames[newPaintedFrameId], "NOT", Point(line_width, line_height*2.1),
                                      FONT_HERSHEY_SIMPLEX, 2,
                                      Scalar(0, 0, 255), 5);
+                    break;
 
                 case 8:
+
                     draw_text_vertical_center(paintedFrames[newPaintedFrameId], "SERVO ON", Point(line_width, line_height*2.1),
                                               FONT_HERSHEY_SIMPLEX, 2,
                                               Scalar(0, 0, 255), 5);
                     break;
+
                 case 128:
+
                     draw_text_vertical_center(paintedFrames[newPaintedFrameId], "ERROR", Point(line_width, line_height*2.1),
                                      FONT_HERSHEY_SIMPLEX, 2,
                                      Scalar(0, 0, 255), 5);
+                    break;
 
             }
 
