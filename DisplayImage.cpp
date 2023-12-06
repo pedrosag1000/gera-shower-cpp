@@ -248,11 +248,11 @@ void sendAndReceiveDataFromToThread() {
 
             checksumTotal = checksumTotal % 256;
 
-            byte checksum = ~((byte)checksumTotal);
+            unsigned char checksum = ~((unsigned char)checksumTotal);
 
 
 
-            if (checksum == (byte)allReadData[lengthOfData - 1]) {
+            if (checksum == (unsigned char)allReadData[lengthOfData - 1]) {
 
                 double tempAzimuthEncoder = ((double) (allReadData[startPosition + startIndex] * 256 +
                                                        allReadData[startPosition + startIndex + 1])) / 10;
