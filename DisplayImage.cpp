@@ -205,26 +205,34 @@ void sendAndReceiveDataFromToThread() {
 
     // Read some data back (will block for up to 100ms due to the SetTimeout(100) call above)
     string readData, allReadData = "";
+
     char startChar = char(255), secondStartChar = char(254);
     bool isDataStarted = false;
     int startPosition = -1, serialLength = 0;
 
     bool newData = false;
+
     while (pressedKey != 27) {
 
         readData.clear();
         serialPort.Read(readData);
-
-
         allReadData.append(readData);
 
-//      cout << "ALIVE " << endl;
+
+        //cout << "ALIVE" << endl;
+
 
         startPosition = allReadData.find(startChar);
 
+        if (startPosition < 0)
+        {
+            allReadData.erase(0, allReadData.size());
+        }
 
-       cout << "START:" << (int) startPosition << endl;
-       cout << "SIZE:" << (int) allReadData.size() << endl;
+
+       //cout << "START: " << (int) startPosition << endl;
+       //cout << "SIZE: " << (int) allReadData.size() << endl;
+
 
         int lengthOfData = 21;
 
@@ -295,7 +303,7 @@ void sendAndReceiveDataFromToThread() {
 
                 errorFlag = allReadData[startPosition+startIndex+13];
 
-
+/*
                 cout << "AZIMUTH ENCODER: " << azimuthEncoder << endl;
                 cout << "ELEVATION ENCODER: " << elevationEncoder << endl;
                 cout << "AZIMUTH RETICLE RANGE: " << azimuthReticleRange << endl;
@@ -306,7 +314,7 @@ void sendAndReceiveDataFromToThread() {
                                   to_string(allReadData[startPosition + startIndex + 10]) + '.' +
                                   to_string(allReadData[startPosition + startIndex + 11]) + '.' +
                                   to_string(allReadData[startPosition + startIndex + 12]) << endl;
-
+*/
 
             }
             else
