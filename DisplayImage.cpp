@@ -320,7 +320,7 @@ void sendAndReceiveDataFromToThread() {
 
             if (allReadData.size() > 1) {
 
-                allReadData.erase(0, startPosition + 1);
+                allReadData.erase(0, 1);
 
             }
 
@@ -400,7 +400,7 @@ void sendAndReceiveDataFromToThread() {
 
         if (allReadData.size() > 100) {
 
-            this_thread::sleep_for(chrono::milliseconds(50));
+            this_thread::sleep_for(chrono::milliseconds(25));
 
         } else {
 
