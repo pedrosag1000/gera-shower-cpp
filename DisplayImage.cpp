@@ -218,14 +218,14 @@ void sendAndReceiveDataFromToThread() {
 
         allReadData.append(readData);
 
-//        cout << "ALIVE " << endl;
+//      cout << "ALIVE " << endl;
 
         startPosition = allReadData.find(startChar);
-//
-//
-//        cout << "START:" << (int) startPosition << endl;
-//        cout << "SIZE:" << (int) allReadData.size() << endl;
-//
+
+
+       cout << "START:" << (int) startPosition << endl;
+       cout << "SIZE:" << (int) allReadData.size() << endl;
+
         int lengthOfData = 21;
 
         if (startPosition >= 0 && allReadData.size() >= startPosition + lengthOfData &&
@@ -233,21 +233,26 @@ void sendAndReceiveDataFromToThread() {
             allReadData[startPosition + 2] == (char) 18 &&
             allReadData[startPosition + 3] == (char) 5 &&
             allReadData[startPosition + 4] == (char) 2 &&
-            //length
-            allReadData[startPosition + 5] == (char) 15) {
+            allReadData[startPosition + 5] == (char) 15) // LENGTH
+            {
 
             newData = true;
+
             int startIndex = 6;
 
+            int checksumTotal = 0;
 
-            int checksum = 0;
             for (int i = startIndex; i < lengthOfData - 1; i++) {
-                checksum += allReadData[i];
+                checksumTotal += allReadData[i];
             }
 
-            if (checksum % 256 == allReadData[lengthOfData - 1]) {
-                cout << "checksum is NOT OK !!!!!" << endl;
-            } else {
+            checksumTotal = checksumTotal % 256;
+
+            byte checksum = ~((byte)checksumTotal);
+
+
+
+            if (checksum == (byte)allReadData[lengthOfData - 1]) {
 
                 double tempAzimuthEncoder = ((double) (allReadData[startPosition + startIndex] * 256 +
                                                        allReadData[startPosition + startIndex + 1])) / 10;
@@ -288,30 +293,39 @@ void sendAndReceiveDataFromToThread() {
                             to_string(allReadData[startPosition + startIndex + 11]) + '.' +
                             to_string(allReadData[startPosition + startIndex + 12]));
 
-                errorFlag=allReadData[startPosition+startIndex+13];
+                errorFlag = allReadData[startPosition+startIndex+13];
 
 
-//                cout << "AZIMUTH ENCODER: " << azimuthEncoder << endl;
-//                cout << "ELEVATION ENCODER: " << elevationEncoder << endl;
-//                cout << "AZIMUTH RETICLE RANGE: " << azimuthReticleRange << endl;
-//                cout << "ELEVATION RETICLE RANGE: " << elevationReticleRange << endl;
-//                cout << "ZOOM: " << zoom << endl;
-////
-//                cout << "IP: " << to_string(allReadData[startPosition + startIndex + 9]) + '.' +
-//                                  to_string(allReadData[startPosition + startIndex + 10]) + '.' +
-//                                  to_string(allReadData[startPosition + startIndex + 11]) + '.' +
-//                                  to_string(allReadData[startPosition + startIndex + 12]) << endl;
+                cout << "AZIMUTH ENCODER: " << azimuthEncoder << endl;
+                cout << "ELEVATION ENCODER: " << elevationEncoder << endl;
+                cout << "AZIMUTH RETICLE RANGE: " << azimuthReticleRange << endl;
+                cout << "ELEVATION RETICLE RANGE: " << elevationReticleRange << endl;
+                cout << "ZOOM: " << zoom << endl;
+
+                cout << "IP: " << to_string(allReadData[startPosition + startIndex + 9]) + '.' +
+                                  to_string(allReadData[startPosition + startIndex + 10]) + '.' +
+                                  to_string(allReadData[startPosition + startIndex + 11]) + '.' +
+                                  to_string(allReadData[startPosition + startIndex + 12]) << endl;
 
 
             }
+            else
+            {
+                cout << "CHECKSUM IS NOT OK!" << endl;
+            }
+
             allReadData.erase(0, startPosition + lengthOfData);
 
         } else {
-            if (allReadData.size() > 1) {
-                allReadData.erase(0, startPosition + 1);
-            }
-        }
 
+            if (allReadData.size() > 1) {
+
+                allReadData.erase(0, startPosition + 1);
+
+            }
+
+        }
+/*
         if (lastTouchReported != touchId || newData) {
             newData = false;
             outputBuffer = "";
@@ -382,12 +396,16 @@ void sendAndReceiveDataFromToThread() {
 
             lastTouchReported = touchId;
         }
-
+*/
 
         if (allReadData.size() > 100) {
-            this_thread::sleep_for(chrono::milliseconds(100));
+
+            this_thread::sleep_for(chrono::milliseconds(50));
+
         } else {
-            this_thread::sleep_for(chrono::milliseconds(1000));
+
+            this_thread::sleep_for(chrono::milliseconds(500));
+
         }
     }
     serialPort.Close();
