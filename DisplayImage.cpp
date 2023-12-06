@@ -400,7 +400,7 @@ void sendAndReceiveDataFromToThread() {
 
         if (allReadData.size() > 100) {
 
-            this_thread::sleep_for(chrono::milliseconds(25));
+            this_thread::sleep_for(chrono::milliseconds(5));
 
         } else {
 
@@ -687,7 +687,7 @@ void readFrameFromVideoCapture() {
 
                 case 8:
 
-                    draw_text_vertical_center(paintedFrames[newPaintedFrameId], "SERVO ON", Point(line_width, line_height*2.1),
+                    draw_text_vertical_center(paintedFrames[newPaintedFrameId], "SERVO LOCK", Point(line_width, line_height*2.1),
                                               FONT_HERSHEY_SIMPLEX, 2,
                                               Scalar(0, 0, 255), 5);
                     break;
