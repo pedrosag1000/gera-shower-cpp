@@ -680,7 +680,7 @@ void readFrameFromVideoCapture() {
 
                 case 2:
 
-                    draw_text_vertical_center(paintedFrames[newPaintedFrameId], "POT", Point(line_width, line_height*2.1),
+                    draw_text_vertical_center(paintedFrames[newPaintedFrameId], "LEFT LIMIT", Point(line_width, line_height*2.1),
                                      FONT_HERSHEY_SIMPLEX, 2,
                                      Scalar(0, 0, 255), 5);
 
@@ -688,14 +688,36 @@ void readFrameFromVideoCapture() {
 
                 case 4:
 
-                    draw_text_vertical_center(paintedFrames[newPaintedFrameId], "NOT", Point(line_width, line_height*2.1),
+                    draw_text_vertical_center(paintedFrames[newPaintedFrameId], "RIGHT LIMIT", Point(line_width, line_height*2.1),
                                      FONT_HERSHEY_SIMPLEX, 2,
                                      Scalar(0, 0, 255), 5);
                     break;
 
                 case 8:
 
-                    draw_text_vertical_center(paintedFrames[newPaintedFrameId], "SERVO LOCK", Point(line_width, line_height*2.1),
+                    draw_text_vertical_center(paintedFrames[newPaintedFrameId], "SERVO LOCKED", Point(line_width, line_height*2.1),
+                                              FONT_HERSHEY_SIMPLEX, 2,
+                                              Scalar(0, 0, 255), 5);
+                    break;
+
+                case 16:
+
+                    draw_text_vertical_center(paintedFrames[newPaintedFrameId], "RESERVED", Point(line_width, line_height*2.1),
+                                              FONT_HERSHEY_SIMPLEX, 2,
+                                              Scalar(0, 0, 255), 5);
+                    break;
+
+                case 32:
+
+                    draw_text_vertical_center(paintedFrames[newPaintedFrameId], "UP LIMIT", Point(line_width, line_height*2.1),
+                                              FONT_HERSHEY_SIMPLEX, 2,
+                                              Scalar(0, 0, 255), 5);
+
+                    break;
+
+                case 64:
+
+                    draw_text_vertical_center(paintedFrames[newPaintedFrameId], "DOWN LIMIT", Point(line_width, line_height*2.1),
                                               FONT_HERSHEY_SIMPLEX, 2,
                                               Scalar(0, 0, 255), 5);
                     break;
