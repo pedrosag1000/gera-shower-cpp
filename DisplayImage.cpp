@@ -226,12 +226,12 @@ void sendAndReceiveDataFromToThread() {
 
         if (startPosition < 0)
         {
-            allReadData.erase(0, allReadData.size());
+            //allReadData.erase(0, allReadData.size());
         }
 
 
-       //cout << "START: " << (int) startPosition << endl;
-       //cout << "SIZE: " << (int) allReadData.size() << endl;
+       cout << "START: " << (int) startPosition << endl;
+       cout << "SIZE: " << (int) allReadData.size() << endl;
 
 
         int lengthOfData = 21;
@@ -243,6 +243,9 @@ void sendAndReceiveDataFromToThread() {
             allReadData[startPosition + 4] == (char) 2 &&
             allReadData[startPosition + 5] == (char) 15) // LENGTH
             {
+
+
+            cout << "PACKET FOUND" << endl;
 
             newData = true;
 
@@ -303,18 +306,19 @@ void sendAndReceiveDataFromToThread() {
 
                 errorFlag = allReadData[startPosition+startIndex+13];
 
-/*
+
                 cout << "AZIMUTH ENCODER: " << azimuthEncoder << endl;
                 cout << "ELEVATION ENCODER: " << elevationEncoder << endl;
                 cout << "AZIMUTH RETICLE RANGE: " << azimuthReticleRange << endl;
                 cout << "ELEVATION RETICLE RANGE: " << elevationReticleRange << endl;
                 cout << "ZOOM: " << zoom << endl;
+		cout << "ERROR FLAG: " << errorFlag << endl;
 
                 cout << "IP: " << to_string(allReadData[startPosition + startIndex + 9]) + '.' +
                                   to_string(allReadData[startPosition + startIndex + 10]) + '.' +
                                   to_string(allReadData[startPosition + startIndex + 11]) + '.' +
                                   to_string(allReadData[startPosition + startIndex + 12]) << endl;
-*/
+
 
             }
             else
@@ -326,12 +330,17 @@ void sendAndReceiveDataFromToThread() {
 
         } else {
 
-            if (allReadData.size() > 1) {
+            if (allReadData.size() > 1000 || startPosition < 0) {
 
-                allReadData.erase(0, 1);
+                allReadData.erase(0, allReadData.size());
 
             }
-
+	    else
+	    {
+		
+            	allReadData.erase(0, startPosition + 1);
+ cout << "ONE BY ONE!" << endl;
+       	    }
         }
 /*
         if (lastTouchReported != touchId || newData) {
@@ -406,7 +415,7 @@ void sendAndReceiveDataFromToThread() {
         }
 */
 
-        if (allReadData.size() > 100) {
+        if (allReadData.size() > 10) {
 
             this_thread::sleep_for(chrono::milliseconds(5));
 
