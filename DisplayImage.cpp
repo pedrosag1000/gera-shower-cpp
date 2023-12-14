@@ -31,14 +31,14 @@ double azimuthEncoder = -100, radar_size_of_angle = 20;
 double elevationEncoder = 50, view_size_of_angle = 20;
 double elevationReticleRange = 60, azimuthReticleRange = 60;
 double zoom = 1.0, realZoom = 1.0;
-int errorFlag=0;
+int errorFlag = 0;
 
 string serialPortAddress = "";
 
 
-const vector <string> explode(const string &s, const char &c) {
+const vector<string> explode(const string &s, const char &c) {
     string buff{""};
-    vector <string> v;
+    vector<string> v;
 
     for (auto n: s) {
         if (n != c) buff += n;
@@ -218,20 +218,10 @@ void sendAndReceiveDataFromToThread() {
         serialPort.Read(readData);
         allReadData.append(readData);
 
-
-        //cout << "ALIVE" << endl;
-
-
         startPosition = allReadData.find(startChar);
 
-        if (startPosition < 0)
-        {
-            //allReadData.erase(0, allReadData.size());
-        }
-
-
-       cout << "START: " << (int) startPosition << endl;
-       cout << "SIZE: " << (int) allReadData.size() << endl;
+        cout << "START: " << (int) startPosition << endl;
+        cout << "SIZE: " << (int) allReadData.size() << endl;
 
 
         int lengthOfData = 21;
@@ -242,7 +232,7 @@ void sendAndReceiveDataFromToThread() {
             allReadData[startPosition + 3] == (char) 5 &&
             allReadData[startPosition + 4] == (char) 2 &&
             allReadData[startPosition + 5] == (char) 15) // LENGTH
-            {
+        {
 
 
             cout << "PACKET FOUND" << endl;
@@ -259,11 +249,10 @@ void sendAndReceiveDataFromToThread() {
 
             checksumTotal = checksumTotal % 256;
 
-            unsigned char checksum = ~((unsigned char)checksumTotal);
+            unsigned char checksum = ~((unsigned char) checksumTotal);
 
 
-
-            if (checksum == (unsigned char)allReadData[lengthOfData - 1]) {
+            if (checksum == (unsigned char) allReadData[lengthOfData - 1]) {
 
                 double tempAzimuthEncoder = ((double) (allReadData[startPosition + startIndex] * 256 +
                                                        allReadData[startPosition + startIndex + 1])) / 10;
@@ -304,7 +293,7 @@ void sendAndReceiveDataFromToThread() {
                             to_string(allReadData[startPosition + startIndex + 11]) + '.' +
                             to_string(allReadData[startPosition + startIndex + 12]));
 
-                errorFlag = allReadData[startPosition+startIndex+13];
+                errorFlag = allReadData[startPosition + startIndex + 13];
 
 
                 cout << "AZIMUTH ENCODER: " << azimuthEncoder << endl;
@@ -312,7 +301,7 @@ void sendAndReceiveDataFromToThread() {
                 cout << "AZIMUTH RETICLE RANGE: " << azimuthReticleRange << endl;
                 cout << "ELEVATION RETICLE RANGE: " << elevationReticleRange << endl;
                 cout << "ZOOM: " << zoom << endl;
-		cout << "ERROR FLAG: " << errorFlag << endl;
+                cout << "ERROR FLAG: " << errorFlag << endl;
 
                 cout << "IP: " << to_string(allReadData[startPosition + startIndex + 9]) + '.' +
                                   to_string(allReadData[startPosition + startIndex + 10]) + '.' +
@@ -320,9 +309,7 @@ void sendAndReceiveDataFromToThread() {
                                   to_string(allReadData[startPosition + startIndex + 12]) << endl;
 
 
-            }
-            else
-            {
+            } else {
                 cout << "CHECKSUM IS NOT OK!" << endl;
             }
 
@@ -330,17 +317,15 @@ void sendAndReceiveDataFromToThread() {
 
         } else {
 
-            if (allReadData.size() > 1000 || startPosition < 0) {
+            if (allReadData.size() > 64 || startPosition < 0) {
 
                 allReadData.erase(0, allReadData.size());
 
+            } else {
+
+                allReadData.erase(0, startPosition + 1);
+                cout << "Remove array from 0 to "<<startPosition << endl;
             }
-	    else
-	    {
-		
-            	allReadData.erase(0, startPosition + 1);
- cout << "ONE BY ONE!" << endl;
-       	    }
         }
 /*
         if (lastTouchReported != touchId || newData) {
@@ -678,47 +663,53 @@ void readFrameFromVideoCapture() {
         //EMERGENCY 1 POT 2 NOT 4
 
 
-        if(newPaintedFrameId / 5 % 2 == 0) {
+        if (newPaintedFrameId / 5 % 2 == 0) {
             switch (errorFlag) {
                 case 1:
 
-                    draw_text_vertical_center(paintedFrames[newPaintedFrameId], "EMERGENCY", Point(line_width, line_height*2.1),
-                                     FONT_HERSHEY_SIMPLEX, 2,
-                                     Scalar(0, 0, 255), 5);
+                    draw_text_vertical_center(paintedFrames[newPaintedFrameId], "EMERGENCY",
+                                              Point(line_width, line_height * 2.1),
+                                              FONT_HERSHEY_SIMPLEX, 2,
+                                              Scalar(0, 0, 255), 5);
                     break;
 
                 case 2:
 
-                    draw_text_vertical_center(paintedFrames[newPaintedFrameId], "LEFT LIMIT", Point(line_width, line_height*2.1),
-                                     FONT_HERSHEY_SIMPLEX, 2,
-                                     Scalar(0, 0, 255), 5);
+                    draw_text_vertical_center(paintedFrames[newPaintedFrameId], "LEFT LIMIT",
+                                              Point(line_width, line_height * 2.1),
+                                              FONT_HERSHEY_SIMPLEX, 2,
+                                              Scalar(0, 0, 255), 5);
 
                     break;
 
                 case 4:
 
-                    draw_text_vertical_center(paintedFrames[newPaintedFrameId], "RIGHT LIMIT", Point(line_width, line_height*2.1),
-                                     FONT_HERSHEY_SIMPLEX, 2,
-                                     Scalar(0, 0, 255), 5);
+                    draw_text_vertical_center(paintedFrames[newPaintedFrameId], "RIGHT LIMIT",
+                                              Point(line_width, line_height * 2.1),
+                                              FONT_HERSHEY_SIMPLEX, 2,
+                                              Scalar(0, 0, 255), 5);
                     break;
 
                 case 8:
 
-                    draw_text_vertical_center(paintedFrames[newPaintedFrameId], "SERVO LOCKED", Point(line_width, line_height*2.1),
+                    draw_text_vertical_center(paintedFrames[newPaintedFrameId], "SERVO LOCKED",
+                                              Point(line_width, line_height * 2.1),
                                               FONT_HERSHEY_SIMPLEX, 2,
                                               Scalar(0, 0, 255), 5);
                     break;
 
                 case 16:
 
-                    draw_text_vertical_center(paintedFrames[newPaintedFrameId], "RESERVED", Point(line_width, line_height*2.1),
+                    draw_text_vertical_center(paintedFrames[newPaintedFrameId], "RESERVED",
+                                              Point(line_width, line_height * 2.1),
                                               FONT_HERSHEY_SIMPLEX, 2,
                                               Scalar(0, 0, 255), 5);
                     break;
 
                 case 32:
 
-                    draw_text_vertical_center(paintedFrames[newPaintedFrameId], "UP LIMIT", Point(line_width, line_height*2.1),
+                    draw_text_vertical_center(paintedFrames[newPaintedFrameId], "UP LIMIT",
+                                              Point(line_width, line_height * 2.1),
                                               FONT_HERSHEY_SIMPLEX, 2,
                                               Scalar(0, 0, 255), 5);
 
@@ -726,16 +717,18 @@ void readFrameFromVideoCapture() {
 
                 case 64:
 
-                    draw_text_vertical_center(paintedFrames[newPaintedFrameId], "DOWN LIMIT", Point(line_width, line_height*2.1),
+                    draw_text_vertical_center(paintedFrames[newPaintedFrameId], "DOWN LIMIT",
+                                              Point(line_width, line_height * 2.1),
                                               FONT_HERSHEY_SIMPLEX, 2,
                                               Scalar(0, 0, 255), 5);
                     break;
 
                 case 128:
 
-                    draw_text_vertical_center(paintedFrames[newPaintedFrameId], "ERROR", Point(line_width, line_height*2.1),
-                                     FONT_HERSHEY_SIMPLEX, 2,
-                                     Scalar(0, 0, 255), 5);
+                    draw_text_vertical_center(paintedFrames[newPaintedFrameId], "ERROR",
+                                              Point(line_width, line_height * 2.1),
+                                              FONT_HERSHEY_SIMPLEX, 2,
+                                              Scalar(0, 0, 255), 5);
                     break;
 
             }
