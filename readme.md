@@ -97,8 +97,10 @@ systemctl disable nvgetty
 udevadm trigger
 sudo usermod -a -G dialout $USER
 ````
+Reset bash
 
-create ` /etc/udev/rules.d/55-tegraserial.rules` and fill the file with this:
+nano ` /etc/udev/rules.d/55-tegraserial.rules` and fill the file with this:
+
 ```shell
 KERNEL=="ttyTHS*", MODE="0666"
 ```
